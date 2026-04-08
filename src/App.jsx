@@ -158,8 +158,23 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await window.storage.get(STORAGE_KEY);
-        if (r?.value) { const d = JSON.parse(r.value); setRecords(d.records || {}); setCurrentDay(d.currentDay || 1); }
+        const { data, error } = await supabase.from("tracker").select("*");
+        if (!error && data && data.length > 0) {
+          const rec = {};
+          data.forEach(row => {
+            rec[row.day] = {
+              done: row.done,
+              platform: row.platform,
+              link: row.link,
+              doneAt: row.done_at,
+            };
+          });
+          // currentDay = 완료된 것 중 가장 큰 day + 1
+          const doneDays = data.filter(r => r.done).map(r => r.day);
+          const nextDay = doneDays.length > 0 ? Math.min(Math.max(...doneDays) + 1, 100) : 1;
+          setRecords(rec);
+          setCurrentDay(nextDay);
+        }
       } catch (_) {}
       setLoaded(true);
     })();
@@ -167,13 +182,8 @@ export default function App() {
 
   useEffect(() => {
     if (!loaded) return;
-    (async () => {
-      try {
-        await window.storage.set(STORAGE_KEY, JSON.stringify({ records, currentDay }));
-        setSavedPulse(true); setTimeout(() => setSavedPulse(false), 1200);
-      } catch (_) {}
-    })();
-  }, [records, currentDay, loaded]);
+    setSavedPulse(true); setTimeout(() => setSavedPulse(false), 1200);
+  }, [records, loaded]);
 
   const completed = Object.values(records).filter(r => r?.done).length;
   const streak = (() => { let s = 0; for (let i = currentDay - 1; i >= 1; i--) { if (records[i]?.done) s++; else break; } return s; })();
