@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const CHALLENGES = [
   { id: 1, title: "Sign Up", desc: "회원가입 페이지, 모달, 폼, 또는 앱 화면을 디자인해. 이벤트 참가, 경품 응모, 서비스 가입 등 어떤 종류든 상관없어." },
@@ -150,35 +156,58 @@ export default function App() {
   const p = mob ? "14px" : "28px";
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) { const d = JSON.parse(raw); setRecords(d.records || {}); setCurrentDay(d.currentDay || 1); }
-    } catch (_) {}
-    setLoaded(true);
+    (async () => {
+      try {
+        const r = await window.storage.get(STORAGE_KEY);
+        if (r?.value) { const d = JSON.parse(r.value); setRecords(d.records || {}); setCurrentDay(d.currentDay || 1); }
+      } catch (_) {}
+      setLoaded(true);
+    })();
   }, []);
 
   useEffect(() => {
     if (!loaded) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ records, currentDay }));
-      setSavedPulse(true); setTimeout(() => setSavedPulse(false), 1200);
-    } catch (_) {}
+    (async () => {
+      try {
+        await window.storage.set(STORAGE_KEY, JSON.stringify({ records, currentDay }));
+        setSavedPulse(true); setTimeout(() => setSavedPulse(false), 1200);
+      } catch (_) {}
+    })();
   }, [records, currentDay, loaded]);
 
   const completed = Object.values(records).filter(r => r?.done).length;
   const streak = (() => { let s = 0; for (let i = currentDay - 1; i >= 1; i--) { if (records[i]?.done) s++; else break; } return s; })();
 
   // 완료 = 업로드 링크 있을 때만
-  function submitUpload(id, platform, link) {
+  async function submitUpload(id, platform, link) {
     if (!link.trim()) return;
-    const updated = { ...records[id], done: true, doneAt: new Date().toLocaleDateString("ko-KR"), platform, link: link.trim() };
+    const challenge = CHALLENGES[id - 1];
+    const doneAt = new Date().toLocaleDateString("ko-KR");
+    const updated = { done: true, doneAt, platform, link: link.trim() };
     setRecords(r => ({ ...r, [id]: updated }));
     if (id === currentDay) setCurrentDay(d => Math.min(d + 1, 100));
+    await supabase.from("tracker").upsert({
+      id,
+      day: id,
+      title: challenge.title,
+      done: true,
+      platform,
+      link: link.trim(),
+      done_at: doneAt,
+    });
   }
 
-  function undoDone(id) {
+  async function undoDone(id) {
     setRecords(r => ({ ...r, [id]: { ...r[id], done: false, link: "", platform: "" } }));
     if (id === currentDay - 1) setCurrentDay(d => Math.max(d - 1, 1));
+    await supabase.from("tracker").upsert({
+      id,
+      day: id,
+      done: false,
+      platform: "",
+      link: "",
+      done_at: "",
+    });
   }
 
   if (!loaded) return (
