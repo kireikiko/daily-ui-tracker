@@ -205,6 +205,16 @@ export default function App() {
       link: link.trim(),
       done_at: doneAt,
     });
+    const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK;
+    if (webhookUrl) {
+      const platformLabels = { dribbble: "Dribbble", behance: "Behance", twitter: "Twitter/X", other: "기타" };
+      const msg = "🎉 **Day " + id + ": " + challenge.title + "** 미션 클리어!\n" + (platformLabels[platform] || platform) + " → " + link.trim();
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: msg }),
+      }).catch(() => {});
+    }
   }
 
   async function undoDone(id) {
