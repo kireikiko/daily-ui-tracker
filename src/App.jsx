@@ -205,16 +205,6 @@ export default function App() {
       link: link.trim(),
       done_at: doneAt,
     });
-    const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK;
-    if (webhookUrl) {
-      const platformLabels = { dribbble: "Dribbble", behance: "Behance", twitter: "Twitter/X", other: "기타" };
-      const msg = "🎉 **Day " + id + ": " + challenge.title + "** 미션 클리어!\n" + (platformLabels[platform] || platform) + " → " + link.trim();
-      fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: msg }),
-      }).catch(() => {});
-    }
   }
 
   async function undoDone(id) {
@@ -274,7 +264,7 @@ export default function App() {
       )}
 
       <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
-        {[["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
+        {[["today", "오늘"], ["all", "전체 100"], ["calendar", "캘린더"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
             color: view === v ? "#fff" : "#444", cursor: "pointer",
@@ -289,6 +279,8 @@ export default function App() {
           ? <TodayPanel mob={mob} challenge={today} record={records[today?.id]}
               onSubmit={(platform, link) => submitUpload(today.id, platform, link)}
               onUndo={() => undoDone(today.id)} />
+          : view === "calendar"
+          ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES} />
           : <AllPanel mob={mob} challenges={CHALLENGES} records={records}
               onSubmit={submitUpload} onUndo={undoDone} currentDay={currentDay} />
         }
@@ -417,6 +409,162 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
             </a>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── 캘린더 패널 ──────────────────────────────────────────
+function CalendarPanel({ mob, records, challenges }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [thumbnails, setThumbnails] = useState({});
+  const WORKER_URL = import.meta.env.VITE_DISCORD_WEBHOOK?.replace(/\/[^/]*$/, "") || "";
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthLabel = `${year}년 ${month + 1}월`;
+
+  // 해당 월의 완료 기록 필터
+  const monthRecords = Object.entries(records).filter(([, rec]) => {
+    if (!rec?.done || !rec?.doneAt) return false;
+    // doneAt 형식: "2026. 4. 24." 또는 "2026. 4. 24"
+    const parts = rec.doneAt.replace(/\./g, "").trim().split(/\s+/);
+    if (parts.length < 3) return false;
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]) - 1;
+    return y === year && m === month;
+  });
+
+  // OG 썸네일 가져오기
+  useEffect(() => {
+    monthRecords.forEach(([id, rec]) => {
+      if (!rec.link || thumbnails[id]) return;
+      const workerBase = import.meta.env.VITE_DISCORD_WEBHOOK
+        ? import.meta.env.VITE_DISCORD_WEBHOOK.replace(/\/$/, "")
+        : "";
+      if (!workerBase) return;
+      fetch(`${workerBase}/og?url=${encodeURIComponent(rec.link)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.image) {
+            setThumbnails(prev => ({ ...prev, [id]: data.image }));
+          }
+        })
+        .catch(() => {});
+    });
+  }, [currentMonth, records]);
+
+  // 캘린더 날짜 배열 생성
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  // 날짜 → 완료 기록 매핑
+  const dateMap = {};
+  monthRecords.forEach(([id, rec]) => {
+    const parts = rec.doneAt.replace(/\./g, "").trim().split(/\s+/);
+    if (parts.length >= 3) {
+      const d = parseInt(parts[2]);
+      dateMap[d] = { id, rec };
+    }
+  });
+
+  const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+  return (
+    <div style={{ maxWidth: mob ? "100%" : "720px" }}>
+      {/* 월 네비게이션 */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+        <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} style={{
+          background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
+          color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
+        }}>←</button>
+        <div style={{ fontSize: mob ? "14px" : "16px", color: "#fff", letterSpacing: "2px" }}>{monthLabel}</div>
+        <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} style={{
+          background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
+          color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
+        }}>→</button>
+      </div>
+
+      {/* 요일 헤더 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px", marginBottom: "2px" }}>
+        {DAY_LABELS.map((d, i) => (
+          <div key={d} style={{
+            textAlign: "center", fontSize: "10px", letterSpacing: "1px",
+            color: i === 0 ? "#ff6b6b" : i === 6 ? "#7fb3ff" : "#444",
+            padding: "6px 0",
+          }}>{d}</div>
+        ))}
+      </div>
+
+      {/* 캘린더 그리드 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
+        {cells.map((day, idx) => {
+          if (!day) return <div key={`empty-${idx}`} style={{ aspectRatio: "1", background: "#0a0a0a", borderRadius: "2px" }} />;
+
+          const entry = dateMap[day];
+          const challenge = entry ? challenges[parseInt(entry.id) - 1] : null;
+          const thumb = entry ? thumbnails[entry.id] : null;
+          const isToday = new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === day;
+
+          return (
+            <div key={day} style={{
+              aspectRatio: "1",
+              background: entry ? "#0d1a0d" : "#0b0b0b",
+              border: `1px solid ${isToday ? "#7fb3ff44" : entry ? "#1d3320" : "#141414"}`,
+              borderRadius: "2px",
+              position: "relative",
+              overflow: "hidden",
+              cursor: entry ? "pointer" : "default",
+            }}
+              onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
+            >
+              {/* 썸네일 */}
+              {thumb && (
+                <img src={thumb} alt="" style={{
+                  position: "absolute", inset: 0, width: "100%", height: "100%",
+                  objectFit: "cover", opacity: 0.7,
+                }} />
+              )}
+
+              {/* 날짜 */}
+              <div style={{
+                position: "absolute", top: "4px", left: "5px",
+                fontSize: mob ? "9px" : "10px",
+                color: entry ? "#7fff7f" : isToday ? "#7fb3ff" : "#444",
+                fontFamily: "monospace", zIndex: 1,
+                textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.8)" : "none",
+              }}>{day}</div>
+
+              {/* 챌린지 번호 */}
+              {entry && !thumb && (
+                <div style={{
+                  position: "absolute", bottom: "4px", right: "5px",
+                  fontSize: "9px", color: "#7fff7f88", fontFamily: "monospace",
+                }}>#{String(entry.id).padStart(3, "0")}</div>
+              )}
+
+              {/* 완료 뱃지 (썸네일 없을 때) */}
+              {entry && !thumb && (
+                <div style={{
+                  position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{ fontSize: mob ? "16px" : "20px" }}>✓</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 범례 */}
+      <div style={{ display: "flex", gap: "16px", marginTop: "16px", fontSize: "10px", color: "#333", letterSpacing: "1px" }}>
+        <span>✓ 완료</span>
+        <span style={{ color: "#7fff7f" }}>■ 업로드 완료</span>
+        <span style={{ color: "#444" }}>클릭하면 업로드 링크로 이동</span>
       </div>
     </div>
   );
