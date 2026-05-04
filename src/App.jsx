@@ -148,7 +148,7 @@ function useMobile() {
 export default function App() {
   const [records, setRecords] = useState({});
   const [currentDay, setCurrentDay] = useState(1);
-  const [view, setView] = useState("today");
+  const [view, setView] = useState("calendar");
   const [loaded, setLoaded] = useState(false);
   const [savedPulse, setSavedPulse] = useState(false);
   const [nagMsg] = useState(() => NAG[Math.floor(Math.random() * NAG.length)]);
@@ -264,7 +264,7 @@ export default function App() {
       )}
 
       <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
-        {[["today", "오늘"], ["all", "전체 100"], ["calendar", "캘린더"]].map(([v, label]) => (
+        {[["calendar", "캘린더"], ["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
             color: view === v ? "#fff" : "#444", cursor: "pointer",
@@ -275,12 +275,14 @@ export default function App() {
       </nav>
 
       <main style={{ padding: mob ? "16px 14px" : "28px" }}>
-        {view === "today"
+        {view === "calendar"
+          ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES}
+              today={today} onSubmitToday={(platform, link) => submitUpload(today?.id, platform, link)}
+              onUndoToday={() => undoDone(today?.id)} todayRecord={records[today?.id]} currentDay={currentDay} />
+          : view === "today"
           ? <TodayPanel mob={mob} challenge={today} record={records[today?.id]}
               onSubmit={(platform, link) => submitUpload(today.id, platform, link)}
               onUndo={() => undoDone(today.id)} />
-          : view === "calendar"
-          ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES} />
           : <AllPanel mob={mob} challenges={CHALLENGES} records={records}
               onSubmit={submitUpload} onUndo={undoDone} currentDay={currentDay} />
         }
@@ -416,27 +418,24 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
 
 
 // ─── 캘린더 패널 ──────────────────────────────────────────
-function CalendarPanel({ mob, records, challenges }) {
+function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoToday, todayRecord, currentDay }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [thumbnails, setThumbnails] = useState({});
-  const WORKER_URL = import.meta.env.VITE_DISCORD_WEBHOOK?.replace(/\/[^/]*$/, "") || "";
+  const [showToday, setShowToday] = useState(true); // 오늘 챌린지 기본으로 열려있게
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const monthLabel = `${year}년 ${month + 1}월`;
+  const todayDate = new Date();
+  const isCurrentMonth = todayDate.getFullYear() === year && todayDate.getMonth() === month;
 
-  // 해당 월의 완료 기록 필터
   const monthRecords = Object.entries(records).filter(([, rec]) => {
     if (!rec?.done || !rec?.doneAt) return false;
-    // doneAt 형식: "2026. 4. 24." 또는 "2026. 4. 24"
-    const parts = rec.doneAt.replace(/\./g, "").trim().split(/\s+/);
+    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
     if (parts.length < 3) return false;
-    const y = parseInt(parts[0]);
-    const m = parseInt(parts[1]) - 1;
-    return y === year && m === month;
+    return parseInt(parts[0]) === year && parseInt(parts[1]) - 1 === month;
   });
 
-  // OG 썸네일 가져오기
   useEffect(() => {
     monthRecords.forEach(([id, rec]) => {
       if (!rec.link || thumbnails[id]) return;
@@ -446,43 +445,116 @@ function CalendarPanel({ mob, records, challenges }) {
       if (!workerBase) return;
       fetch(`${workerBase}/og?url=${encodeURIComponent(rec.link)}`)
         .then(r => r.json())
-        .then(data => {
-          if (data.image) {
-            setThumbnails(prev => ({ ...prev, [id]: data.image }));
-          }
-        })
+        .then(data => { if (data.image) setThumbnails(prev => ({ ...prev, [id]: data.image })); })
         .catch(() => {});
     });
   }, [currentMonth, records]);
 
-  // 캘린더 날짜 배열 생성
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  // 날짜 → 완료 기록 매핑
   const dateMap = {};
   monthRecords.forEach(([id, rec]) => {
-    const parts = rec.doneAt.replace(/\./g, "").trim().split(/\s+/);
-    if (parts.length >= 3) {
-      const d = parseInt(parts[2]);
-      dateMap[d] = { id, rec };
-    }
+    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
+    if (parts.length >= 3) dateMap[parseInt(parts[2])] = { id, rec };
   });
 
   const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+  const todayDay = todayDate.getDate();
 
   return (
     <div style={{ maxWidth: mob ? "100%" : "720px" }}>
+      {/* 오늘 챌린지 카드 — 상단 고정 */}
+      {isCurrentMonth && today && (
+        <div style={{
+          marginBottom: "20px",
+          border: `1px solid ${showToday ? "#7fb3ff66" : "#1a1a1a"}`,
+          borderRadius: "3px",
+          background: "#05080f",
+          overflow: "hidden",
+          transition: "all 0.3s",
+        }}>
+          {/* 헤더 — 클릭으로 토글 */}
+          <div
+            onClick={() => setShowToday(v => !v)}
+            style={{
+              padding: mob ? "12px 14px" : "14px 20px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{
+                background: "#7fb3ff", color: "#000", fontSize: "9px",
+                letterSpacing: "2px", padding: "3px 8px", borderRadius: "2px", fontWeight: "700",
+              }}>TODAY</div>
+              <span style={{ fontSize: mob ? "15px" : "18px", fontWeight: "700", color: "#fff", letterSpacing: "-0.5px" }}>
+                Day {today.id}: {today.title}
+              </span>
+            </div>
+            <span style={{ color: "#444", fontSize: "12px" }}>{showToday ? "▲" : "▼"}</span>
+          </div>
+
+          {/* 챌린지 상세 */}
+          {showToday && (
+            <div style={{ padding: mob ? "0 14px 16px" : "0 20px 20px", borderTop: "1px solid #0d1a2a" }}>
+              <p style={{ fontSize: "12px", color: "#4a5a6a", lineHeight: "1.7", margin: "12px 0 16px", borderLeft: "2px solid #1a2a3a", paddingLeft: "10px" }}>
+                {today.desc}
+              </p>
+
+              {/* 완료 상태 */}
+              {todayRecord?.done ? (
+                <div>
+                  <div style={{ fontSize: "11px", color: "#7fff7f", marginBottom: "8px" }}>✓ 미션 클리어!</div>
+                  {todayRecord.link && (
+                    <a href={todayRecord.link} target="_blank" rel="noreferrer"
+                      style={{ fontSize: "11px", color: "#7fb3ff", textDecoration: "none", wordBreak: "break-all" }}>
+                      ↗ {todayRecord.link}
+                    </a>
+                  )}
+                  <div style={{ marginTop: "10px" }}>
+                    <button onClick={onUndoToday} style={{
+                      background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
+                      color: "#333", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace",
+                    }}>↩ 취소</button>
+                  </div>
+                </div>
+              ) : (
+                <UploadForm mob={mob} onSubmit={onSubmitToday} />
+              )}
+
+              {/* 레퍼런스 */}
+              <div style={{ marginTop: "14px" }}>
+                <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#2a2a2a", marginBottom: "8px" }}>REFERENCES</div>
+                <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
+                  {[
+                    { label: "Mobbin", color: "#7fff7f", url: `https://mobbin.com/search/screens?q=${encodeURIComponent(today.title)}` },
+                    { label: "Dribbble", color: "#ffdd57", url: `https://dribbble.com/search/${encodeURIComponent(today.title.replace(/\s+/g,"-").toLowerCase())}` },
+                    { label: "Behance", color: "#7fb3ff", url: `https://www.behance.net/search/projects?search=${encodeURIComponent(today.title)}+ui` },
+                    { label: "Pinterest", color: "#ff9f7f", url: `https://pinterest.com/search/pins/?q=${encodeURIComponent(today.title)}+ui+design` },
+                  ].map(ref => (
+                    <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
+                      style={{ display: "block", padding: "6px 8px", border: `1px solid ${ref.color}22`, borderRadius: "2px", color: ref.color, fontSize: "10px", textDecoration: "none", background: `${ref.color}08`, textAlign: "center" }}>
+                      ↗ {ref.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 월 네비게이션 */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
         <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} style={{
           background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
           color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
         }}>←</button>
-        <div style={{ fontSize: mob ? "14px" : "16px", color: "#fff", letterSpacing: "2px" }}>{monthLabel}</div>
+        <div style={{ fontSize: mob ? "13px" : "15px", color: "#fff", letterSpacing: "2px" }}>{monthLabel}</div>
         <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} style={{
           background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
           color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
@@ -503,68 +575,78 @@ function CalendarPanel({ mob, records, challenges }) {
       {/* 캘린더 그리드 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
         {cells.map((day, idx) => {
-          if (!day) return <div key={`empty-${idx}`} style={{ aspectRatio: "1", background: "#0a0a0a", borderRadius: "2px" }} />;
+          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#0a0a0a", borderRadius: "2px" }} />;
 
           const entry = dateMap[day];
-          const challenge = entry ? challenges[parseInt(entry.id) - 1] : null;
           const thumb = entry ? thumbnails[entry.id] : null;
-          const isToday = new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === day;
+          const isToday = isCurrentMonth && day === todayDay;
 
           return (
-            <div key={day} style={{
-              aspectRatio: "1",
-              background: entry ? "#0d1a0d" : "#0b0b0b",
-              border: `1px solid ${isToday ? "#7fb3ff44" : entry ? "#1d3320" : "#141414"}`,
-              borderRadius: "2px",
-              position: "relative",
-              overflow: "hidden",
-              cursor: entry ? "pointer" : "default",
-            }}
+            <div key={day}
               onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
+              style={{
+                aspectRatio: "1",
+                background: entry ? "#0d1a0d" : isToday ? "#050d1a" : "#0b0b0b",
+                border: `${isToday ? "2px" : "1px"} solid ${
+                  isToday ? "#7fb3ff" : entry ? "#1d3320" : "#141414"
+                }`,
+                borderRadius: "2px",
+                position: "relative",
+                overflow: "hidden",
+                cursor: entry ? "pointer" : "default",
+                boxShadow: isToday ? "0 0 8px #7fb3ff44" : "none",
+              }}
             >
-              {/* 썸네일 */}
               {thumb && (
                 <img src={thumb} alt="" style={{
                   position: "absolute", inset: 0, width: "100%", height: "100%",
-                  objectFit: "cover", opacity: 0.7,
+                  objectFit: "cover", opacity: 0.75,
                 }} />
               )}
 
-              {/* 날짜 */}
+              {/* 날짜 숫자 */}
               <div style={{
-                position: "absolute", top: "4px", left: "5px",
+                position: "absolute", top: "3px", left: "4px",
                 fontSize: mob ? "9px" : "10px",
-                color: entry ? "#7fff7f" : isToday ? "#7fb3ff" : "#444",
-                fontFamily: "monospace", zIndex: 1,
-                textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.8)" : "none",
+                color: isToday ? "#7fb3ff" : entry ? "#7fff7f" : "#444",
+                fontFamily: "monospace", zIndex: 1, fontWeight: isToday ? "700" : "400",
+                textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none",
               }}>{day}</div>
 
-              {/* 챌린지 번호 */}
-              {entry && !thumb && (
+              {/* TODAY 뱃지 */}
+              {isToday && !entry && (
                 <div style={{
-                  position: "absolute", bottom: "4px", right: "5px",
-                  fontSize: "9px", color: "#7fff7f88", fontFamily: "monospace",
-                }}>#{String(entry.id).padStart(3, "0")}</div>
+                  position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{ fontSize: "9px", color: "#7fb3ff", letterSpacing: "1px", fontFamily: "monospace" }}>●</div>
+                </div>
               )}
 
-              {/* 완료 뱃지 (썸네일 없을 때) */}
+              {/* 완료 표시 (썸네일 없을 때) */}
               {entry && !thumb && (
                 <div style={{
                   position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <div style={{ fontSize: mob ? "16px" : "20px" }}>✓</div>
+                  <div style={{ fontSize: mob ? "14px" : "18px", color: "#7fff7f" }}>✓</div>
                 </div>
+              )}
+
+              {/* 챌린지 번호 */}
+              {entry && !thumb && (
+                <div style={{
+                  position: "absolute", bottom: "3px", right: "4px",
+                  fontSize: "8px", color: "#7fff7f66", fontFamily: "monospace",
+                }}>#{String(entry.id).padStart(3, "0")}</div>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* 범례 */}
-      <div style={{ display: "flex", gap: "16px", marginTop: "16px", fontSize: "10px", color: "#333", letterSpacing: "1px" }}>
-        <span>✓ 완료</span>
-        <span style={{ color: "#7fff7f" }}>■ 업로드 완료</span>
-        <span style={{ color: "#444" }}>클릭하면 업로드 링크로 이동</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#2a2a2a", letterSpacing: "1px", flexWrap: "wrap" }}>
+        <span style={{ color: "#7fb3ff" }}>■ 오늘</span>
+        <span style={{ color: "#7fff7f" }}>✓ 완료</span>
+        <span>클릭 → 업로드 링크</span>
       </div>
     </div>
   );
