@@ -6,18 +6,6 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-// Auth helper
-async function signInWithGoogle() {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin },
-  });
-}
-
-async function signOut() {
-  await supabase.auth.signOut();
-}
-
 const CHALLENGES = [
   { id: 1, title: "Sign Up", desc: "회원가입 페이지, 모달, 폼, 또는 앱 화면을 디자인해. 이벤트 참가, 경품 응모, 서비스 가입 등 어떤 종류든 상관없어." },
   { id: 2, title: "Credit Card Checkout", desc: "신용카드 결제 폼이나 페이지를 디자인해. 카드 번호, 유효기간, 보안코드 같은 필수 요소들을 잊지 마." },
@@ -131,17 +119,17 @@ const REFS = (title) => {
   const q = encodeURIComponent(title);
   const qd = encodeURIComponent(title.replace(/\s+/g, "-").toLowerCase());
   return [
-    { label: "Mobbin", color: "#0ACF83", url: `https://mobbin.com/search/screens?q=${q}` },
-    { label: "Dribbble", color: "#FF7262", url: `https://dribbble.com/search/${qd}` },
-    { label: "Behance", color: "#1ABCFE", url: `https://www.behance.net/search/projects?search=${q}+ui` },
-    { label: "Pinterest", color: "#F24E1E", url: `https://pinterest.com/search/pins/?q=${q}+ui+design` },
+    { label: "Mobbin", color: "#7fff7f", url: `https://mobbin.com/search/screens?q=${q}` },
+    { label: "Dribbble", color: "#ffdd57", url: `https://dribbble.com/search/${qd}` },
+    { label: "Behance", color: "#7fb3ff", url: `https://www.behance.net/search/projects?search=${q}+ui` },
+    { label: "Pinterest", color: "#ff9f7f", url: `https://pinterest.com/search/pins/?q=${q}+ui+design` },
   ];
 };
 
 const UPLOAD_PLATFORMS = [
-  { key: "dribbble", label: "Dribbble", color: "#FF7262", placeholder: "https://dribbble.com/shots/..." },
-  { key: "behance", label: "Behance", color: "#1ABCFE", placeholder: "https://behance.net/gallery/..." },
-  { key: "twitter", label: "Twitter/X", color: "#0ACF83", placeholder: "https://twitter.com/..." },
+  { key: "dribbble", label: "Dribbble", color: "#ffdd57", placeholder: "https://dribbble.com/shots/..." },
+  { key: "behance", label: "Behance", color: "#7fb3ff", placeholder: "https://behance.net/gallery/..." },
+  { key: "twitter", label: "Twitter/X", color: "#7fff7f", placeholder: "https://twitter.com/..." },
   { key: "other", label: "기타", color: "#aaa", placeholder: "https://..." },
 ];
 
@@ -158,34 +146,19 @@ function useMobile() {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [records, setRecords] = useState({});
   const [currentDay, setCurrentDay] = useState(1);
-  const [view, setView] = useState("calendar");
+  const [view, setView] = useState("today");
   const [loaded, setLoaded] = useState(false);
   const [savedPulse, setSavedPulse] = useState(false);
   const [nagMsg] = useState(() => NAG[Math.floor(Math.random() * NAG.length)]);
   const mob = useMobile();
   const p = mob ? "14px" : "28px";
 
-  // Auth 상태 감지
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
     (async () => {
       try {
-        const { data, error } = await supabase.from("tracker").select("*").eq("user_id", user.id);
+        const { data, error } = await supabase.from("tracker").select("*");
         if (!error && data && data.length > 0) {
           const rec = {};
           data.forEach(row => {
@@ -205,7 +178,7 @@ export default function App() {
       } catch (_) {}
       setLoaded(true);
     })();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!loaded) return;
@@ -231,7 +204,6 @@ export default function App() {
       platform,
       link: link.trim(),
       done_at: doneAt,
-      user_id: user?.id,
     });
   }
 
@@ -245,122 +217,65 @@ export default function App() {
       platform: "",
       link: "",
       done_at: "",
-      user_id: user?.id,
     });
   }
 
-  // Auth 로딩 중
-  if (authLoading) return (
-    <div style={{ background: "#FFFFFF", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "#CCCCCC", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: "4px", fontSize: "11px" }}>LOADING...</span>
-    </div>
-  );
-
-  // 로그인 안 된 경우
-  if (!user) return (
-    <div style={{ background: "#FFFFFF", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <div style={{ textAlign: "center", maxWidth: "360px", padding: "40px 24px" }}>
-        <div style={{ fontSize: "11px", letterSpacing: "4px", color: "#CCCCCC", marginBottom: "12px" }}>DAILY UI CHALLENGE</div>
-        <div style={{ fontSize: "32px", fontWeight: "700", color: "#1A1A1A", marginBottom: "8px", letterSpacing: "-1px" }}>Tracker</div>
-        <div style={{ fontSize: "13px", color: "#999999", marginBottom: "40px", lineHeight: "1.6" }}>
-          챌린지를 기록하고<br />100일을 완주해보세요
-        </div>
-        <button onClick={signInWithGoogle} style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-          width: "100%", padding: "14px 24px",
-          background: "#FFFFFF", border: "1px solid #E5E5E5", borderRadius: "8px",
-          fontSize: "14px", color: "#1A1A1A", cursor: "pointer", fontWeight: "500",
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-          transition: "all 0.2s",
-        }}>
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-            <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
-            <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
-            <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
-          </svg>
-          Google로 계속하기
-        </button>
-        <div style={{ marginTop: "24px", fontSize: "11px", color: "#CCCCCC" }}>
-          로그인하면 PC/모바일에서 기록이 동기화됩니다
-        </div>
-      </div>
-    </div>
-  );
-
   if (!loaded) return (
-    <div style={{ background: "#FFFFFF", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "#CCCCCC", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", letterSpacing: "4px", fontSize: "11px" }}>LOADING...</span>
+    <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ color: "#333", fontFamily: "monospace", letterSpacing: "4px", fontSize: "11px" }}>LOADING...</span>
     </div>
   );
 
   const today = CHALLENGES[currentDay - 1];
 
   return (
-    <div style={{ background: "#FFFFFF", minHeight: "100vh", color: "#1A1A1A", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <header style={{ borderBottom: "1px solid #F0F0F0", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
+    <div style={{ background: "#080808", minHeight: "100vh", color: "#e8e8e8", fontFamily: "'Courier New', monospace" }}>
+      <header style={{ borderBottom: "1px solid #1a1a1a", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#999999", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
-            <div style={{ fontSize: mob ? "20px" : "24px", fontWeight: "700", letterSpacing: "-0.5px", color: "#1A1A1A" }}>Tracker</div>
+            <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#333", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
+            <div style={{ fontSize: mob ? "20px" : "24px", fontWeight: "700", letterSpacing: "-0.5px", color: "#fff" }}>Tracker</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ fontSize: "9px", color: savedPulse ? "#0ACF83" : "#E5E5E5", letterSpacing: "2px", transition: "color 0.5s", paddingTop: "4px" }}>SAVED</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {user?.user_metadata?.avatar_url && (
-                <img src={user.user_metadata.avatar_url} alt="" style={{ width: "24px", height: "24px", borderRadius: "50%", border: "1px solid #F0F0F0" }} />
-              )}
-              <button onClick={signOut} style={{
-                background: "none", border: "1px solid #F0F0F0", borderRadius: "4px",
-                color: "#AAAAAA", cursor: "pointer", fontSize: "10px", padding: "4px 8px",
-                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-              }}>로그아웃</button>
-            </div>
-          </div>
+          <div style={{ fontSize: "9px", color: savedPulse ? "#7fff7f" : "#1c1c1c", letterSpacing: "2px", transition: "color 0.5s", paddingTop: "4px" }}>SAVED</div>
         </div>
-        <div style={{ display: "flex", marginTop: "14px", borderTop: "1px solid #F0F0F0", paddingTop: "12px" }}>
+        <div style={{ display: "flex", marginTop: "14px", borderTop: "1px solid #141414", paddingTop: "12px" }}>
           {[
-            { label: "완료", val: `${completed}/100`, color: "#0ACF83" },
-            { label: "스트릭", val: `${streak}일`, color: "#FF7262" },
-            { label: "달성률", val: `${completed}%`, color: "#1ABCFE" },
+            { label: "완료", val: `${completed}/100`, color: "#7fff7f" },
+            { label: "스트릭", val: `${streak}일`, color: "#ffdd57" },
+            { label: "달성률", val: `${completed}%`, color: "#7fb3ff" },
           ].map((s, i) => (
             <div key={s.label} style={{ flex: 1, textAlign: i === 0 ? "left" : i === 2 ? "right" : "center" }}>
               <div style={{ fontSize: mob ? "16px" : "20px", fontWeight: "700", color: s.color, lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontSize: "9px", color: "#999999", letterSpacing: "2px", marginTop: "3px" }}>{s.label}</div>
+              <div style={{ fontSize: "9px", color: "#333", letterSpacing: "2px", marginTop: "3px" }}>{s.label}</div>
             </div>
           ))}
         </div>
       </header>
 
-      <div style={{ height: "2px", background: "#F5F5F5" }}>
-        <div style={{ height: "100%", width: `${completed}%`, background: "linear-gradient(90deg,#1ABCFE,#0ACF83)", transition: "width 0.8s cubic-bezier(.16,1,.3,1)" }} />
+      <div style={{ height: "2px", background: "#111" }}>
+        <div style={{ height: "100%", width: `${completed}%`, background: "linear-gradient(90deg,#7fb3ff,#7fff7f)", transition: "width 0.8s cubic-bezier(.16,1,.3,1)" }} />
       </div>
 
       {streak === 0 && completed < 100 && (
-        <div style={{ background: "#FFFBEB", padding: `9px ${p}`, fontSize: "11px", color: "#FF7262" }}>⚡ {nagMsg}</div>
+        <div style={{ background: "#0e0900", borderBottom: "1px solid #221c00", padding: `9px ${p}`, fontSize: "11px", color: "#ffdd57" }}>⚡ {nagMsg}</div>
       )}
       {streak >= 3 && (
-        <div style={{ background: "#F0FFF4", padding: `9px ${p}`, fontSize: "11px", color: "#0ACF83" }}>🔥 {streak}일 연속! 이대로 가자</div>
+        <div style={{ background: "#001209", borderBottom: "1px solid #002516", padding: `9px ${p}`, fontSize: "11px", color: "#7fff7f" }}>🔥 {streak}일 연속! 이대로 가자</div>
       )}
 
-      <nav style={{ display: "flex", borderBottom: "1px solid #F0F0F0", padding: `0 ${p}` }}>
-        {[["calendar", "캘린더"], ["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
+      <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
+        {[["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
-            color: view === v ? "#1A1A1A" : "#888888", cursor: "pointer",
+            color: view === v ? "#fff" : "#444", cursor: "pointer",
             fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase",
             borderBottom: view === v ? "1px solid #7fb3ff" : "1px solid transparent",
           }}>{label}</button>
         ))}
       </nav>
 
-      <main style={{ padding: mob ? "16px 14px" : "28px" }}>
-        {view === "calendar"
-          ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES}
-              today={today} onSubmitToday={(platform, link) => submitUpload(today?.id, platform, link)}
-              onUndoToday={() => undoDone(today?.id)} todayRecord={records[today?.id]} currentDay={currentDay} />
-          : view === "today"
+      <main style={{ padding: mob ? "16px 14px" : "32px 5vw", width: "100%", boxSizing: "border-box" }}>
+        {view === "today"
           ? <TodayPanel mob={mob} challenge={today} record={records[today?.id]}
               onSubmit={(platform, link) => submitUpload(today.id, platform, link)}
               onUndo={() => undoDone(today.id)} />
@@ -379,19 +294,19 @@ function UploadForm({ mob, onSubmit, onCancel }) {
   const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
 
   return (
-    <div style={{ marginTop: "16px", border: "1px solid #F0F0F0", borderRadius: "3px", padding: "16px", background: "#FAFAFA" }}>
-      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#888888", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
+    <div style={{ marginTop: "16px", border: "1px solid #1e1e1e", borderRadius: "3px", padding: "16px", background: "#0a0a0a" }}>
+      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#555", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
 
       {/* 플랫폼 선택 */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "12px" }}>
         {UPLOAD_PLATFORMS.map(p => (
           <button key={p.key} onClick={() => setPlatform(p.key)} style={{
             background: platform === p.key ? `${p.color}14` : "none",
-            border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`,
+            border: `1px solid ${platform === p.key ? p.color + "66" : "#1e1e1e"}`,
             borderRadius: "2px", padding: "7px 0",
-            color: platform === p.key ? p.color : "#888888",
+            color: platform === p.key ? p.color : "#444",
             cursor: "pointer", fontSize: "11px", letterSpacing: "1px",
-            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+            fontFamily: "monospace",
           }}>{p.label}</button>
         ))}
       </div>
@@ -401,19 +316,19 @@ function UploadForm({ mob, onSubmit, onCancel }) {
         value={link} onChange={e => setLink(e.target.value)}
         onKeyDown={e => e.key === "Enter" && link.trim() && onSubmit(platform, link)}
         placeholder={selected?.placeholder}
-        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }}
+        style={{ width: "100%", boxSizing: "border-box", background: "#111", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#e8e8e8", fontFamily: "monospace", fontSize: "12px", outline: "none", marginBottom: "10px" }}
       />
 
       <div style={{ display: "flex", gap: "6px" }}>
         <button onClick={() => link.trim() && onSubmit(platform, link)} style={{
-          flex: 1, background: link.trim() ? "#F0FFF8" : "#FFFFFF",
-          border: `1px solid ${link.trim() ? "#0ACF8344" : "#F0F0F0"}`,
-          borderRadius: "2px", color: link.trim() ? "#0ACF83" : "#999999",
+          flex: 1, background: link.trim() ? "#061008" : "#0d0d0d",
+          border: `1px solid ${link.trim() ? "#7fff7f55" : "#1e1e1e"}`,
+          borderRadius: "2px", color: link.trim() ? "#7fff7f" : "#333",
           cursor: link.trim() ? "pointer" : "default",
-          fontSize: "11px", padding: "10px", letterSpacing: "1px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          fontSize: "11px", padding: "10px", letterSpacing: "1px", fontFamily: "monospace",
         }}>✓ 업로드 완료 — 미션 클리어</button>
         {onCancel && (
-          <button onClick={onCancel} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>취소</button>
+          <button onClick={onCancel} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#333", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "monospace" }}>취소</button>
         )}
       </div>
     </div>
@@ -423,56 +338,56 @@ function UploadForm({ mob, onSubmit, onCancel }) {
 // ─── 오늘 패널 ────────────────────────────────────────────
 function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
   const [showUpload, setShowUpload] = useState(false);
-  if (!challenge) return <p style={{ color: "#888888" }}>챌린지 완주! 🎉</p>;
+  if (!challenge) return <p style={{ color: "#555" }}>챌린지 완주! 🎉</p>;
   const done = record?.done;
   const platformInfo = UPLOAD_PLATFORMS.find(p => p.key === record?.platform);
 
   return (
-    <div style={{ maxWidth: mob ? "100%" : "560px" }}>
+    <div style={{ width: "100%" }}>
       <div style={{
-        border: `1px solid ${done ? "#B7F0D4" : "#F0F0F0"}`,
+        border: `1px solid ${done ? "#1d3320" : "#1c1c1c"}`,
         borderRadius: "3px", padding: mob ? "18px" : "24px 28px",
-        background: done ? "#F0FFF8" : "#FFFFFF",
+        background: done ? "#060f07" : "#0d0d0d",
         transition: "all 0.4s", marginBottom: "12px",
       }}>
-        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#888888", marginBottom: "8px" }}>DAY {challenge.id} / 100</div>
-        <h2 style={{ fontSize: mob ? "26px" : "34px", fontWeight: "700", margin: "0 0 14px", letterSpacing: "-1px", lineHeight: 1.1, color: done ? "#0ACF83" : "#1A1A1A" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#444", marginBottom: "8px" }}>DAY {challenge.id} / 100</div>
+        <h2 style={{ fontSize: mob ? "26px" : "34px", fontWeight: "700", margin: "0 0 14px", letterSpacing: "-1px", lineHeight: 1.1, color: done ? "#7fff7f" : "#fff" }}>
           {challenge.title}
         </h2>
 
         {/* 미션 설명 */}
-        <p style={{ fontSize: mob ? "12px" : "13px", color: "#777777", lineHeight: "1.75", margin: "0 0 20px", borderLeft: "2px solid #F0F0F0", paddingLeft: "12px" }}>
+        <p style={{ fontSize: mob ? "12px" : "13px", color: "#5a5a5a", lineHeight: "1.75", margin: "0 0 20px", borderLeft: "2px solid #1e1e1e", paddingLeft: "12px" }}>
           {challenge.desc}
         </p>
 
         <a href="https://www.dailyui.co" target="_blank" rel="noreferrer"
-          style={{ fontSize: "10px", color: "#AAAAAA", textDecoration: "none" }}>dailyui.co →</a>
+          style={{ fontSize: "10px", color: "#2a2a2a", textDecoration: "none" }}>dailyui.co →</a>
 
         {/* 완료 상태 */}
         {done ? (
           <div style={{ marginTop: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-              <span style={{ fontSize: "11px", color: "#0ACF83", letterSpacing: "1px" }}>✓ 미션 클리어</span>
+              <span style={{ fontSize: "11px", color: "#7fff7f", letterSpacing: "1px" }}>✓ 미션 클리어</span>
               {platformInfo && <span style={{ fontSize: "10px", color: platformInfo.color, border: `1px solid ${platformInfo.color}33`, padding: "2px 8px", borderRadius: "2px" }}>{platformInfo.label}</span>}
-              <span style={{ fontSize: "10px", color: "#AAAAAA" }}>{record.doneAt}</span>
+              <span style={{ fontSize: "10px", color: "#2a2a2a" }}>{record.doneAt}</span>
             </div>
             <a href={record.link} target="_blank" rel="noreferrer"
-              style={{ fontSize: "11px", color: "#1ABCFE", textDecoration: "none", wordBreak: "break-all" }}>↗ {record.link}</a>
+              style={{ fontSize: "11px", color: "#7fb3ff", textDecoration: "none", wordBreak: "break-all" }}>↗ {record.link}</a>
             <div style={{ marginTop: "12px" }}>
-              <button onClick={onUndo} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>↩ 취소</button>
+              <button onClick={onUndo} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#333", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace" }}>↩ 취소</button>
             </div>
           </div>
         ) : (
           <div style={{ marginTop: "20px" }}>
             {/* 업로드해야 완료 가능 안내 */}
-            <div style={{ fontSize: "11px", color: "#888888", marginBottom: "12px", letterSpacing: "0.3px" }}>
+            <div style={{ fontSize: "11px", color: "#444", marginBottom: "12px", letterSpacing: "0.3px" }}>
               📌 Dribbble, Behance, Twitter/X 중 한 곳에 업로드하고 링크 등록하면 완료!
             </div>
             {!showUpload
               ? <button onClick={() => setShowUpload(true)} style={{
-                  background: "#E6FFF4", border: "1px solid #7fff7f44", borderRadius: "2px",
-                  color: "#0ACF83", cursor: "pointer", fontSize: "12px", padding: "10px 20px",
-                  letterSpacing: "1px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                  background: "#061008", border: "1px solid #7fff7f44", borderRadius: "2px",
+                  color: "#7fff7f", cursor: "pointer", fontSize: "12px", padding: "10px 20px",
+                  letterSpacing: "1px", fontFamily: "monospace",
                   width: mob ? "100%" : "auto",
                 }}>업로드 링크 등록하기</button>
               : <UploadForm mob={mob} onSubmit={onSubmit} onCancel={() => setShowUpload(false)} />
@@ -482,8 +397,8 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
       </div>
 
       {/* 레퍼런스 */}
-      <div style={{ border: "1px solid #F0F0F0", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#FAFAFA" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#999999", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
+      <div style={{ border: "1px solid #1a1a1a", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#0d0d0d" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#333", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
         <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "6px" }}>
           {REFS(challenge.title).map(ref => (
             <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
@@ -492,240 +407,6 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
             </a>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ─── 캘린더 패널 ──────────────────────────────────────────
-function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoToday, todayRecord, currentDay }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [thumbnails, setThumbnails] = useState({});
-  const [showToday, setShowToday] = useState(true); // 오늘 챌린지 기본으로 열려있게
-
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-  const monthLabel = `${year}년 ${month + 1}월`;
-  const todayDate = new Date();
-  const isCurrentMonth = todayDate.getFullYear() === year && todayDate.getMonth() === month;
-
-  const monthRecords = Object.entries(records).filter(([, rec]) => {
-    if (!rec?.done || !rec?.doneAt) return false;
-    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
-    if (parts.length < 3) return false;
-    return parseInt(parts[0]) === year && parseInt(parts[1]) - 1 === month;
-  });
-
-  useEffect(() => {
-    monthRecords.forEach(([id, rec]) => {
-      if (!rec.link || thumbnails[id]) return;
-      const workerBase = import.meta.env.VITE_DISCORD_WEBHOOK
-        ? import.meta.env.VITE_DISCORD_WEBHOOK.replace(/\/$/, "")
-        : "";
-      if (!workerBase) return;
-      fetch(`${workerBase}/og?url=${encodeURIComponent(rec.link)}`)
-        .then(r => r.json())
-        .then(data => { if (data.image) setThumbnails(prev => ({ ...prev, [id]: data.image })); })
-        .catch(() => {});
-    });
-  }, [currentMonth, records]);
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  const dateMap = {};
-  monthRecords.forEach(([id, rec]) => {
-    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
-    if (parts.length >= 3) dateMap[parseInt(parts[2])] = { id, rec };
-  });
-
-  const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
-  const todayDay = todayDate.getDate();
-
-  return (
-    <div style={{ maxWidth: mob ? "100%" : "720px" }}>
-      {/* 오늘 챌린지 카드 — 상단 고정 */}
-      {isCurrentMonth && today && (
-        <div style={{
-          marginBottom: "20px",
-          border: "1px solid #F2F2F2",
-          borderRadius: "3px",
-          background: "#FFFFFF",
-          overflow: "hidden",
-          transition: "all 0.3s",
-        }}>
-          {/* 헤더 — 클릭으로 토글 */}
-          <div
-            onClick={() => setShowToday(v => !v)}
-            style={{
-              padding: mob ? "12px 14px" : "14px 20px",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{
-                background: "#1ABCFE", color: "#FFFFFF", fontSize: "9px",
-                letterSpacing: "2px", padding: "3px 8px", borderRadius: "2px", fontWeight: "700",
-              }}>TODAY</div>
-              <span style={{ fontSize: mob ? "15px" : "18px", fontWeight: "700", color: "#1A1A1A", letterSpacing: "-0.5px" }}>
-                Day {today.id}: {today.title}
-              </span>
-            </div>
-            <span style={{ color: "#888888", fontSize: "12px" }}>{showToday ? "▲" : "▼"}</span>
-          </div>
-
-          {/* 챌린지 상세 */}
-          {showToday && (
-            <div style={{ padding: mob ? "0 14px 16px" : "0 20px 20px", borderTop: "1px solid #0d1a2a" }}>
-              <p style={{ fontSize: "12px", color: "#666677", lineHeight: "1.7", margin: "12px 0 16px", borderLeft: "2px solid #F0F0F0", paddingLeft: "10px" }}>
-                {today.desc}
-              </p>
-
-              {/* 완료 상태 */}
-              {todayRecord?.done ? (
-                <div>
-                  <div style={{ fontSize: "11px", color: "#0ACF83", marginBottom: "8px" }}>✓ 미션 클리어!</div>
-                  {todayRecord.link && (
-                    <a href={todayRecord.link} target="_blank" rel="noreferrer"
-                      style={{ fontSize: "11px", color: "#1ABCFE", textDecoration: "none", wordBreak: "break-all" }}>
-                      ↗ {todayRecord.link}
-                    </a>
-                  )}
-                  <div style={{ marginTop: "10px" }}>
-                    <button onClick={onUndoToday} style={{
-                      background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
-                      color: "#999999", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                    }}>↩ 취소</button>
-                  </div>
-                </div>
-              ) : (
-                <UploadForm mob={mob} onSubmit={onSubmitToday} />
-              )}
-
-              {/* 레퍼런스 */}
-              <div style={{ marginTop: "14px" }}>
-                <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#AAAAAA", marginBottom: "8px" }}>REFERENCES</div>
-                <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
-                  {[
-                    { label: "Mobbin", color: "#0ACF83", url: `https://mobbin.com/search/screens?q=${encodeURIComponent(today.title)}` },
-                    { label: "Dribbble", color: "#FF7262", url: `https://dribbble.com/search/${encodeURIComponent(today.title.replace(/\s+/g,"-").toLowerCase())}` },
-                    { label: "Behance", color: "#1ABCFE", url: `https://www.behance.net/search/projects?search=${encodeURIComponent(today.title)}+ui` },
-                    { label: "Pinterest", color: "#F24E1E", url: `https://pinterest.com/search/pins/?q=${encodeURIComponent(today.title)}+ui+design` },
-                  ].map(ref => (
-                    <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
-                      style={{ display: "block", padding: "6px 8px", border: `1px solid ${ref.color}22`, borderRadius: "2px", color: ref.color, fontSize: "10px", textDecoration: "none", background: `${ref.color}08`, textAlign: "center" }}>
-                      ↗ {ref.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 월 네비게이션 */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-        <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} style={{
-          background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
-          color: "#777777", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        }}>←</button>
-        <div style={{ fontSize: mob ? "13px" : "15px", color: "#1A1A1A", letterSpacing: "2px" }}>{monthLabel}</div>
-        <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} style={{
-          background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
-          color: "#777777", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-        }}>→</button>
-      </div>
-
-      {/* 요일 헤더 */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px", marginBottom: "2px" }}>
-        {DAY_LABELS.map((d, i) => (
-          <div key={d} style={{
-            textAlign: "center", fontSize: "10px", letterSpacing: "1px",
-            color: i === 0 ? "#ff6b6b" : i === 6 ? "#1ABCFE" : "#888888",
-            padding: "6px 0",
-          }}>{d}</div>
-        ))}
-      </div>
-
-      {/* 캘린더 그리드 */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
-        {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#FAFAFA", borderRadius: "2px" }} />;
-
-          const entry = dateMap[day];
-          const thumb = entry ? thumbnails[entry.id] : null;
-          const isToday = isCurrentMonth && day === todayDay;
-
-          return (
-            <div key={day}
-              onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
-              style={{
-                aspectRatio: "1",
-                background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F5F5F5",
-                border: `${isToday ? "2px" : "1px"} solid ${isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`,
-                borderRadius: "2px",
-                position: "relative",
-                overflow: "hidden",
-                cursor: entry ? "pointer" : "default",
-                boxShadow: isToday ? "0 0 8px #7fb3ff44" : "none",
-              }}
-            >
-              {thumb && (
-                <img src={thumb} alt="" style={{
-                  position: "absolute", inset: 0, width: "100%", height: "100%",
-                  objectFit: "cover", opacity: 0.75,
-                }} />
-              )}
-
-              {/* 날짜 숫자 */}
-              <div style={{
-                position: "absolute", top: "3px", left: "4px",
-                fontSize: mob ? "9px" : "10px",
-                color: isToday ? "#1ABCFE" : entry ? "#0ACF83" : "#888888",
-                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", zIndex: 1, fontWeight: isToday ? "700" : "400",
-                textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none",
-              }}>{day}</div>
-
-              {/* TODAY 뱃지 */}
-              {isToday && !entry && (
-                <div style={{
-                  position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <div style={{ fontSize: "9px", color: "#1ABCFE", letterSpacing: "1px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>●</div>
-                </div>
-              )}
-
-              {/* 완료 표시 (썸네일 없을 때) */}
-              {entry && !thumb && (
-                <div style={{
-                  position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <div style={{ fontSize: mob ? "14px" : "18px", color: "#0ACF83" }}>✓</div>
-                </div>
-              )}
-
-              {/* 챌린지 번호 */}
-              {entry && !thumb && (
-                <div style={{
-                  position: "absolute", bottom: "3px", right: "4px",
-                  fontSize: "8px", color: "#0ACF8366", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-                }}>#{String(entry.id).padStart(3, "0")}</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#AAAAAA", letterSpacing: "1px", flexWrap: "wrap" }}>
-        <span style={{ color: "#1ABCFE" }}>■ 오늘</span>
-        <span style={{ color: "#0ACF83" }}>✓ 완료</span>
-        <span>클릭 → 업로드 링크</span>
       </div>
     </div>
   );
@@ -745,15 +426,15 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
   });
 
   return (
-    <div style={{ maxWidth: mob ? "100%" : "660px" }}>
+    <div style={{ width: "100%" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "5px", marginBottom: "14px" }}>
         {[["all", "전체"], ["todo", "미완료"], ["done", "완료"]].map(([v, label]) => (
           <button key={v} onClick={() => setFilter(v)} style={{
-            background: filter === v ? "#F0F0F0" : "none",
-            border: `1px solid ${filter === v ? "#AAAAAA" : "#F0F0F0"}`,
+            background: filter === v ? "#181818" : "none",
+            border: `1px solid ${filter === v ? "#2a2a2a" : "#141414"}`,
             borderRadius: "2px", padding: mob ? "8px 0" : "5px 0",
-            color: filter === v ? "#ccc" : "#777777", cursor: "pointer",
-            fontSize: "10px", letterSpacing: "2px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+            color: filter === v ? "#ccc" : "#3a3a3a", cursor: "pointer",
+            fontSize: "10px", letterSpacing: "2px", fontFamily: "monospace",
           }}>{label}</button>
         ))}
       </div>
@@ -770,17 +451,17 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
           return (
             <div key={c.id} style={{
-              border: `1px solid ${isCurrent ? "#1ABCFE28" : done ? "#B7F0D4" : "#F5F5F5"}`,
+              border: `1px solid ${isCurrent ? "#7fb3ff28" : done ? "#1a3020" : "#111"}`,
               borderRadius: "2px",
-              background: isCurrent ? "#F0F8FF" : done ? "#F0FFF8" : "#F5F5F5",
+              background: isCurrent ? "#05080f" : done ? "#050e07" : "#0b0b0b",
             }}>
               <div style={{ padding: mob ? "12px 10px" : "11px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "10px", color: "#AAAAAA", minWidth: "20px", flexShrink: 0 }}>{String(c.id).padStart(2, "0")}</span>
+                <span style={{ fontSize: "10px", color: "#2a2a2a", minWidth: "20px", flexShrink: 0 }}>{String(c.id).padStart(2, "0")}</span>
 
                 <span onClick={() => setExpanded(isExpanded ? null : c.id)}
-                  style={{ flex: 1, fontSize: mob ? "13px" : "12px", color: done ? "#0ACF83" : isCurrent ? "#1ABCFE" : "#777777", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+                  style={{ flex: 1, fontSize: mob ? "13px" : "12px", color: done ? "#5dcc6a" : isCurrent ? "#7fb3ff" : "#666", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
                   {c.title}
-                  {isCurrent && !mob && <span style={{ fontSize: "9px", color: "#1ABCFE66", letterSpacing: "2px", marginLeft: "8px" }}>← TODAY</span>}
+                  {isCurrent && !mob && <span style={{ fontSize: "9px", color: "#7fb3ff66", letterSpacing: "2px", marginLeft: "8px" }}>← TODAY</span>}
                 </span>
 
                 {/* 업로드 플랫폼 뱃지 */}
@@ -792,28 +473,28 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
                 )}
 
                 <button onClick={() => setRefOpen(isRefOpen ? null : c.id)} style={{
-                  background: "none", border: "none", color: isRefOpen ? "#FF7262" : "#BBBBBB",
+                  background: "none", border: "none", color: isRefOpen ? "#ffdd57" : "#252525",
                   cursor: "pointer", fontSize: "9px", letterSpacing: "1px", padding: "0 3px", flexShrink: 0,
                 }}>REF</button>
 
                 {!done
                   ? <button onClick={() => setUploadOpen(isUploadOpen ? null : c.id)} style={{
-                      background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
-                      color: "#777777", cursor: "pointer", fontSize: "10px",
-                      padding: mob ? "6px 10px" : "3px 9px", letterSpacing: "1px", flexShrink: 0, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                      background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
+                      color: "#3a3a3a", cursor: "pointer", fontSize: "10px",
+                      padding: mob ? "6px 10px" : "3px 9px", letterSpacing: "1px", flexShrink: 0, fontFamily: "monospace",
                     }}>업로드</button>
                   : <button onClick={() => onUndo(c.id)} style={{
                       background: "none", border: "1px solid #1a3020", borderRadius: "2px",
-                      color: "#0ACF83", cursor: "pointer", fontSize: "10px",
-                      padding: mob ? "6px 10px" : "3px 9px", flexShrink: 0, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                      color: "#5dcc6a", cursor: "pointer", fontSize: "10px",
+                      padding: mob ? "6px 10px" : "3px 9px", flexShrink: 0, fontFamily: "monospace",
                     }}>✓</button>
                 }
               </div>
 
               {/* 설명 펼치기 */}
               {isExpanded && (
-                <div style={{ padding: mob ? "0 10px 12px 38px" : "0 14px 12px 44px", borderTop: "1px solid #F0F0F0" }}>
-                  <p style={{ fontSize: "11px", color: "#777777", lineHeight: "1.7", margin: "10px 0 0", borderLeft: "2px solid #F0F0F0", paddingLeft: "10px" }}>
+                <div style={{ padding: mob ? "0 10px 12px 38px" : "0 14px 12px 44px", borderTop: "1px solid #111" }}>
+                  <p style={{ fontSize: "11px", color: "#4a4a4a", lineHeight: "1.7", margin: "10px 0 0", borderLeft: "2px solid #1e1e1e", paddingLeft: "10px" }}>
                     {c.desc}
                   </p>
                 </div>
@@ -821,7 +502,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
               {/* REF 드롭다운 */}
               {isRefOpen && (
-                <div style={{ padding: mob ? "10px" : "8px 14px 12px 44px", borderTop: "1px solid #F0F0F0", display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
+                <div style={{ padding: mob ? "10px" : "8px 14px 12px 44px", borderTop: "1px solid #111", display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
                   {REFS(c.title).map(ref => (
                     <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
                       style={{ fontSize: "10px", color: ref.color, textDecoration: "none", padding: "6px 0", border: `1px solid ${ref.color}22`, borderRadius: "2px", background: `${ref.color}08`, textAlign: "center" }}>
@@ -833,7 +514,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
               {/* 업로드 폼 */}
               {isUploadOpen && !done && (
-                <div style={{ padding: "0 10px 12px", borderTop: "1px solid #F0F0F0" }}>
+                <div style={{ padding: "0 10px 12px", borderTop: "1px solid #111" }}>
                   <UploadForm mob={mob}
                     onSubmit={(platform, link) => { onSubmit(c.id, platform, link); setUploadOpen(null); }}
                     onCancel={() => setUploadOpen(null)} />
@@ -843,7 +524,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
           );
         })}
       </div>
-      <div style={{ marginTop: "10px", fontSize: "10px", color: "#BBBBBB" }}>💡 제목 클릭 → 미션 설명 / 업로드 버튼 → 완료 처리</div>
+      <div style={{ marginTop: "10px", fontSize: "10px", color: "#252525" }}>💡 제목 클릭 → 미션 설명 / 업로드 버튼 → 완료 처리</div>
     </div>
   );
 }
