@@ -722,7 +722,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
                       padding: mob ? "6px 10px" : "3px 9px", letterSpacing: "1px", flexShrink: 0, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                     }}>업로드</button>
                   : <button onClick={() => onUndo(c.id)} style={{
-                      background: "none", border: "1px solid #1a3020", borderRadius: "2px",
+                      background: "none", border: "1px solid #B7F0D4", borderRadius: "2px",
                       color: "#0ACF83", cursor: "pointer", fontSize: "10px",
                       padding: mob ? "6px 10px" : "3px 9px", flexShrink: 0, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                     }}>✓</button>
