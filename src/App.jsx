@@ -229,8 +229,8 @@ export default function App() {
   const today = CHALLENGES[currentDay - 1];
 
   return (
-    <div style={{ background: "#FFFFFF", minHeight: "100vh", color: "#333333", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <header style={{ borderBottom: "1px solid #F0F0F0", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
+    <div style={{ background: "#FFFFFF", minHeight: "100vh", color: "#F0F0F0", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <header style={{ borderBottom: "1px solid #1a1a1a", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#999999", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
@@ -263,7 +263,7 @@ export default function App() {
         <div style={{ background: "#F0FFF4", borderBottom: "1px solid #BBF7D0", padding: `9px ${p}`, fontSize: "11px", color: "#0ACF83" }}>🔥 {streak}일 연속! 이대로 가자</div>
       )}
 
-      <nav style={{ display: "flex", borderBottom: "1px solid #F0F0F0", padding: `0 ${p}` }}>
+      <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
         {[["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
@@ -316,7 +316,7 @@ function UploadForm({ mob, onSubmit, onCancel }) {
         value={link} onChange={e => setLink(e.target.value)}
         onKeyDown={e => e.key === "Enter" && link.trim() && onSubmit(platform, link)}
         placeholder={selected?.placeholder}
-        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#333333", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }}
+        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#F0F0F0", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }}
       />
 
       <div style={{ display: "flex", gap: "6px" }}>
@@ -397,7 +397,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
       </div>
 
       {/* 레퍼런스 */}
-      <div style={{ border: "1px solid #E5E5E5", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#FAFAFA" }}>
+      <div style={{ border: "1px solid #1a1a1a", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#FAFAFA" }}>
         <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#AAAAAA", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
         <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "6px" }}>
           {REFS(challenge.title).map(ref => (
@@ -451,7 +451,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
           return (
             <div key={c.id} style={{
-              border: `1px solid ${isCurrent ? "#D8F4FF" : done ? "#B7F0D4" : "#E5E5E5"}`,
+              border: `1px solid ${isCurrent ? "#1ABCFE28" : done ? "#B7F0D4" : "#111"}`,
               borderRadius: "2px",
               background: isCurrent ? "#F8F8F8" : done ? "#F0FFF8" : "#FAFAFA",
             }}>
