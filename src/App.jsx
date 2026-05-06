@@ -213,7 +213,7 @@ export default function App() {
     if (id === currentDay) setCurrentDay(d => Math.min(d + 1, 100));
     await supabase.from("tracker").upsert({ id, day: id, title: challenge.title, done: true, platform, link: link.trim(), done_at: doneAt, user_id: user?.id });
     const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK;
-    if (webhookUrl) {
+    if (webhookUrl && user?.id === import.meta.env.VITE_OWNER_ID) {
       const labels = { dribbble: "Dribbble", behance: "Behance", twitter: "Twitter/X", other: "기타" };
       fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `🎉 **Day ${id}: ${challenge.title}** 미션 클리어!\n${labels[platform] || platform} → ${link.trim()}` }) }).catch(() => {});
     }
