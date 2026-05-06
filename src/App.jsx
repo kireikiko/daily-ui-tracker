@@ -230,7 +230,7 @@ export default function App() {
 
   return (
     <div style={{ background: "#FFFFFF", minHeight: "100vh", color: "#1A1A1A", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <header style={{ borderBottom: "1px solid #1a1a1a", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
+      <header style={{ borderBottom: "1px solid #F0F0F0", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#999999", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
@@ -238,7 +238,7 @@ export default function App() {
           </div>
           <div style={{ fontSize: "9px", color: savedPulse ? "#0ACF83" : "#E5E5E5", letterSpacing: "2px", transition: "color 0.5s", paddingTop: "4px" }}>SAVED</div>
         </div>
-        <div style={{ display: "flex", marginTop: "14px", borderTop: "1px solid #EBEBEB", paddingTop: "12px" }}>
+        <div style={{ display: "flex", marginTop: "14px", borderTop: "1px solid #F0F0F0", paddingTop: "12px" }}>
           {[
             { label: "완료", val: `${completed}/100`, color: "#0ACF83" },
             { label: "스트릭", val: `${streak}일`, color: "#FF7262" },
@@ -263,7 +263,7 @@ export default function App() {
         <div style={{ background: "#F0FFF4", padding: `9px ${p}`, fontSize: "11px", color: "#0ACF83" }}>🔥 {streak}일 연속! 이대로 가자</div>
       )}
 
-      <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
+      <nav style={{ display: "flex", borderBottom: "1px solid #F0F0F0", padding: `0 ${p}` }}>
         {[["calendar", "캘린더"], ["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
@@ -298,7 +298,7 @@ function UploadForm({ mob, onSubmit, onCancel }) {
   const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
 
   return (
-    <div style={{ marginTop: "16px", border: "1px solid #DDDDDD", borderRadius: "3px", padding: "16px", background: "#FAFAFA" }}>
+    <div style={{ marginTop: "16px", border: "1px solid #F0F0F0", borderRadius: "3px", padding: "16px", background: "#FAFAFA" }}>
       <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#888888", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
 
       {/* 플랫폼 선택 */}
@@ -306,7 +306,7 @@ function UploadForm({ mob, onSubmit, onCancel }) {
         {UPLOAD_PLATFORMS.map(p => (
           <button key={p.key} onClick={() => setPlatform(p.key)} style={{
             background: platform === p.key ? `${p.color}14` : "none",
-            border: `1px solid ${platform === p.key ? p.color + "66" : "#DDDDDD"}`,
+            border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`,
             borderRadius: "2px", padding: "7px 0",
             color: platform === p.key ? p.color : "#888888",
             cursor: "pointer", fontSize: "11px", letterSpacing: "1px",
@@ -326,13 +326,13 @@ function UploadForm({ mob, onSubmit, onCancel }) {
       <div style={{ display: "flex", gap: "6px" }}>
         <button onClick={() => link.trim() && onSubmit(platform, link)} style={{
           flex: 1, background: link.trim() ? "#F0FFF8" : "#FFFFFF",
-          border: `1px solid ${link.trim() ? "#0ACF8344" : "#EBEBEB"}`,
+          border: `1px solid ${link.trim() ? "#0ACF8344" : "#F0F0F0"}`,
           borderRadius: "2px", color: link.trim() ? "#0ACF83" : "#999999",
           cursor: link.trim() ? "pointer" : "default",
           fontSize: "11px", padding: "10px", letterSpacing: "1px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         }}>✓ 업로드 완료 — 미션 클리어</button>
         {onCancel && (
-          <button onClick={onCancel} style={{ background: "none", border: "1px solid #DDDDDD", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>취소</button>
+          <button onClick={onCancel} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>취소</button>
         )}
       </div>
     </div>
@@ -349,7 +349,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
   return (
     <div style={{ maxWidth: mob ? "100%" : "560px" }}>
       <div style={{
-        border: `1px solid ${done ? "#B7F0D4" : "#E5E5E5"}`,
+        border: `1px solid ${done ? "#B7F0D4" : "#F0F0F0"}`,
         borderRadius: "3px", padding: mob ? "18px" : "24px 28px",
         background: done ? "#F0FFF8" : "#FFFFFF",
         transition: "all 0.4s", marginBottom: "12px",
@@ -360,7 +360,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
         </h2>
 
         {/* 미션 설명 */}
-        <p style={{ fontSize: mob ? "12px" : "13px", color: "#777777", lineHeight: "1.75", margin: "0 0 20px", borderLeft: "2px solid #E5E5E5", paddingLeft: "12px" }}>
+        <p style={{ fontSize: mob ? "12px" : "13px", color: "#777777", lineHeight: "1.75", margin: "0 0 20px", borderLeft: "2px solid #F0F0F0", paddingLeft: "12px" }}>
           {challenge.desc}
         </p>
 
@@ -378,7 +378,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
             <a href={record.link} target="_blank" rel="noreferrer"
               style={{ fontSize: "11px", color: "#1ABCFE", textDecoration: "none", wordBreak: "break-all" }}>↗ {record.link}</a>
             <div style={{ marginTop: "12px" }}>
-              <button onClick={onUndo} style={{ background: "none", border: "1px solid #DDDDDD", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>↩ 취소</button>
+              <button onClick={onUndo} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "2px", color: "#999999", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>↩ 취소</button>
             </div>
           </div>
         ) : (
@@ -401,7 +401,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
       </div>
 
       {/* 레퍼런스 */}
-      <div style={{ border: "1px solid #1a1a1a", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#FAFAFA" }}>
+      <div style={{ border: "1px solid #F0F0F0", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#FAFAFA" }}>
         <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#999999", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
         <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "6px" }}>
           {REFS(challenge.title).map(ref => (
@@ -501,7 +501,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           {/* 챌린지 상세 */}
           {showToday && (
             <div style={{ padding: mob ? "0 14px 16px" : "0 20px 20px", borderTop: "1px solid #0d1a2a" }}>
-              <p style={{ fontSize: "12px", color: "#666677", lineHeight: "1.7", margin: "12px 0 16px", borderLeft: "2px solid #DBEAFE", paddingLeft: "10px" }}>
+              <p style={{ fontSize: "12px", color: "#666677", lineHeight: "1.7", margin: "12px 0 16px", borderLeft: "2px solid #F0F0F0", paddingLeft: "10px" }}>
                 {today.desc}
               </p>
 
@@ -517,7 +517,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
                   )}
                   <div style={{ marginTop: "10px" }}>
                     <button onClick={onUndoToday} style={{
-                      background: "none", border: "1px solid #DDDDDD", borderRadius: "2px",
+                      background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
                       color: "#999999", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                     }}>↩ 취소</button>
                   </div>
@@ -551,12 +551,12 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {/* 월 네비게이션 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
         <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} style={{
-          background: "none", border: "1px solid #DDDDDD", borderRadius: "2px",
+          background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
           color: "#777777", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         }}>←</button>
         <div style={{ fontSize: mob ? "13px" : "15px", color: "#1A1A1A", letterSpacing: "2px" }}>{monthLabel}</div>
         <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} style={{
-          background: "none", border: "1px solid #DDDDDD", borderRadius: "2px",
+          background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
           color: "#777777", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         }}>→</button>
       </div>
@@ -587,9 +587,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
               style={{
                 aspectRatio: "1",
                 background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F5F5F5",
-                border: `${isToday ? "2px" : "1px"} solid ${
-                  isToday ? "#1ABCFE" : entry ? "#B7F0D4" : "#EBEBEB"
-                }`,
+                border: `${isToday ? "2px" : "1px"} solid ${isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`,
                 borderRadius: "2px",
                 position: "relative",
                 overflow: "hidden",
@@ -671,7 +669,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
         {[["all", "전체"], ["todo", "미완료"], ["done", "완료"]].map(([v, label]) => (
           <button key={v} onClick={() => setFilter(v)} style={{
             background: filter === v ? "#F0F0F0" : "none",
-            border: `1px solid ${filter === v ? "#AAAAAA" : "#EBEBEB"}`,
+            border: `1px solid ${filter === v ? "#AAAAAA" : "#F0F0F0"}`,
             borderRadius: "2px", padding: mob ? "8px 0" : "5px 0",
             color: filter === v ? "#ccc" : "#777777", cursor: "pointer",
             fontSize: "10px", letterSpacing: "2px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -719,7 +717,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
                 {!done
                   ? <button onClick={() => setUploadOpen(isUploadOpen ? null : c.id)} style={{
-                      background: "none", border: "1px solid #DDDDDD", borderRadius: "2px",
+                      background: "none", border: "1px solid #F0F0F0", borderRadius: "2px",
                       color: "#777777", cursor: "pointer", fontSize: "10px",
                       padding: mob ? "6px 10px" : "3px 9px", letterSpacing: "1px", flexShrink: 0, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                     }}>업로드</button>
@@ -733,8 +731,8 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
               {/* 설명 펼치기 */}
               {isExpanded && (
-                <div style={{ padding: mob ? "0 10px 12px 38px" : "0 14px 12px 44px", borderTop: "1px solid #EBEBEB" }}>
-                  <p style={{ fontSize: "11px", color: "#777777", lineHeight: "1.7", margin: "10px 0 0", borderLeft: "2px solid #E5E5E5", paddingLeft: "10px" }}>
+                <div style={{ padding: mob ? "0 10px 12px 38px" : "0 14px 12px 44px", borderTop: "1px solid #F0F0F0" }}>
+                  <p style={{ fontSize: "11px", color: "#777777", lineHeight: "1.7", margin: "10px 0 0", borderLeft: "2px solid #F0F0F0", paddingLeft: "10px" }}>
                     {c.desc}
                   </p>
                 </div>
@@ -742,7 +740,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
               {/* REF 드롭다운 */}
               {isRefOpen && (
-                <div style={{ padding: mob ? "10px" : "8px 14px 12px 44px", borderTop: "1px solid #EBEBEB", display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
+                <div style={{ padding: mob ? "10px" : "8px 14px 12px 44px", borderTop: "1px solid #F0F0F0", display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
                   {REFS(c.title).map(ref => (
                     <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
                       style={{ fontSize: "10px", color: ref.color, textDecoration: "none", padding: "6px 0", border: `1px solid ${ref.color}22`, borderRadius: "2px", background: `${ref.color}08`, textAlign: "center" }}>
@@ -754,7 +752,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
               {/* 업로드 폼 */}
               {isUploadOpen && !done && (
-                <div style={{ padding: "0 10px 12px", borderTop: "1px solid #EBEBEB" }}>
+                <div style={{ padding: "0 10px 12px", borderTop: "1px solid #F0F0F0" }}>
                   <UploadForm mob={mob}
                     onSubmit={(platform, link) => { onSubmit(c.id, platform, link); setUploadOpen(null); }}
                     onCancel={() => setUploadOpen(null)} />
