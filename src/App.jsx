@@ -257,10 +257,10 @@ export default function App() {
       </div>
 
       {streak === 0 && completed < 100 && (
-        <div style={{ background: "#FFFBEB", borderBottom: "1px solid #FDE68A", padding: `9px ${p}`, fontSize: "11px", color: "#FF7262" }}>⚡ {nagMsg}</div>
+        <div style={{ background: "#FFFBEB", padding: `9px ${p}`, fontSize: "11px", color: "#FF7262" }}>⚡ {nagMsg}</div>
       )}
       {streak >= 3 && (
-        <div style={{ background: "#F0FFF4", borderBottom: "1px solid #BBF7D0", padding: `9px ${p}`, fontSize: "11px", color: "#0ACF83" }}>🔥 {streak}일 연속! 이대로 가자</div>
+        <div style={{ background: "#F0FFF4", padding: `9px ${p}`, fontSize: "11px", color: "#0ACF83" }}>🔥 {streak}일 연속! 이대로 가자</div>
       )}
 
       <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
@@ -298,7 +298,7 @@ function UploadForm({ mob, onSubmit, onCancel }) {
   const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
 
   return (
-    <div style={{ marginTop: "16px", border: "1px solid #DDDDDD", borderRadius: "3px", padding: "16px", background: "#F8F8F8" }}>
+    <div style={{ marginTop: "16px", border: "1px solid #DDDDDD", borderRadius: "3px", padding: "16px", background: "#FAFAFA" }}>
       <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#888888", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
 
       {/* 플랫폼 선택 */}
@@ -325,8 +325,8 @@ function UploadForm({ mob, onSubmit, onCancel }) {
 
       <div style={{ display: "flex", gap: "6px" }}>
         <button onClick={() => link.trim() && onSubmit(platform, link)} style={{
-          flex: 1, background: link.trim() ? "#E6FFF4" : "#FAFAFA",
-          border: `1px solid ${link.trim() ? "#0ACF8355" : "#DDDDDD"}`,
+          flex: 1, background: link.trim() ? "#F0FFF8" : "#FFFFFF",
+          border: `1px solid ${link.trim() ? "#0ACF8344" : "#EBEBEB"}`,
           borderRadius: "2px", color: link.trim() ? "#0ACF83" : "#999999",
           cursor: link.trim() ? "pointer" : "default",
           fontSize: "11px", padding: "10px", letterSpacing: "1px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -351,7 +351,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
       <div style={{
         border: `1px solid ${done ? "#B7F0D4" : "#E5E5E5"}`,
         borderRadius: "3px", padding: mob ? "18px" : "24px 28px",
-        background: done ? "#F0FFF8" : "#FAFAFA",
+        background: done ? "#F0FFF8" : "#FFFFFF",
         transition: "all 0.4s", marginBottom: "12px",
       }}>
         <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#888888", marginBottom: "8px" }}>DAY {challenge.id} / 100</div>
@@ -471,9 +471,9 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {isCurrentMonth && today && (
         <div style={{
           marginBottom: "20px",
-          border: `1px solid ${showToday ? "#1ABCFE66" : "#E5E5E5"}`,
+          border: "1px solid #F2F2F2",
           borderRadius: "3px",
-          background: "#F0F8FF",
+          background: "#FFFFFF",
           overflow: "hidden",
           transition: "all 0.3s",
         }}>
@@ -575,7 +575,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {/* 캘린더 그리드 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
         {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#F8F8F8", borderRadius: "2px" }} />;
+          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#FAFAFA", borderRadius: "2px" }} />;
 
           const entry = dateMap[day];
           const thumb = entry ? thumbnails[entry.id] : null;
