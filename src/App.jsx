@@ -119,17 +119,17 @@ const REFS = (title) => {
   const q = encodeURIComponent(title);
   const qd = encodeURIComponent(title.replace(/\s+/g, "-").toLowerCase());
   return [
-    { label: "Mobbin", color: "#7fff7f", url: `https://mobbin.com/search/screens?q=${q}` },
-    { label: "Dribbble", color: "#ffdd57", url: `https://dribbble.com/search/${qd}` },
-    { label: "Behance", color: "#7fb3ff", url: `https://www.behance.net/search/projects?search=${q}+ui` },
-    { label: "Pinterest", color: "#ff9f7f", url: `https://pinterest.com/search/pins/?q=${q}+ui+design` },
+    { label: "Mobbin", color: "#1a8c3a", url: `https://mobbin.com/search/screens?q=${q}` },
+    { label: "Dribbble", color: "#b45309", url: `https://dribbble.com/search/${qd}` },
+    { label: "Behance", color: "#2563eb", url: `https://www.behance.net/search/projects?search=${q}+ui` },
+    { label: "Pinterest", color: "#c2410c", url: `https://pinterest.com/search/pins/?q=${q}+ui+design` },
   ];
 };
 
 const UPLOAD_PLATFORMS = [
-  { key: "dribbble", label: "Dribbble", color: "#ffdd57", placeholder: "https://dribbble.com/shots/..." },
-  { key: "behance", label: "Behance", color: "#7fb3ff", placeholder: "https://behance.net/gallery/..." },
-  { key: "twitter", label: "Twitter/X", color: "#7fff7f", placeholder: "https://twitter.com/..." },
+  { key: "dribbble", label: "Dribbble", color: "#b45309", placeholder: "https://dribbble.com/shots/..." },
+  { key: "behance", label: "Behance", color: "#2563eb", placeholder: "https://behance.net/gallery/..." },
+  { key: "twitter", label: "Twitter/X", color: "#1a8c3a", placeholder: "https://twitter.com/..." },
   { key: "other", label: "기타", color: "#aaa", placeholder: "https://..." },
 ];
 
@@ -221,53 +221,53 @@ export default function App() {
   }
 
   if (!loaded) return (
-    <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ color: "#333", fontFamily: "monospace", letterSpacing: "4px", fontSize: "11px" }}>LOADING...</span>
+    <div style={{ background: "#f8f8f6", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <span style={{ color: "#bbbbbb", fontFamily: "monospace", letterSpacing: "4px", fontSize: "11px" }}>LOADING...</span>
     </div>
   );
 
   const today = CHALLENGES[currentDay - 1];
 
   return (
-    <div style={{ background: "#080808", minHeight: "100vh", color: "#e8e8e8", fontFamily: "'Courier New', monospace" }}>
+    <div style={{ background: "#f8f8f6", minHeight: "100vh", color: "#1a1a18", fontFamily: "'Courier New', monospace" }}>
       <header style={{ borderBottom: "1px solid #1a1a1a", padding: mob ? "16px 14px 12px" : "22px 28px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#333", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
-            <div style={{ fontSize: mob ? "20px" : "24px", fontWeight: "700", letterSpacing: "-0.5px", color: "#fff" }}>Tracker</div>
+            <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#bbbbbb", marginBottom: "3px" }}>DAILY UI CHALLENGE</div>
+            <div style={{ fontSize: mob ? "20px" : "24px", fontWeight: "700", letterSpacing: "-0.5px", color: "#111110" }}>Tracker</div>
           </div>
-          <div style={{ fontSize: "9px", color: savedPulse ? "#7fff7f" : "#1c1c1c", letterSpacing: "2px", transition: "color 0.5s", paddingTop: "4px" }}>SAVED</div>
+          <div style={{ fontSize: "9px", color: savedPulse ? "#1a8c3a" : "#dcdcd8", letterSpacing: "2px", transition: "color 0.5s", paddingTop: "4px" }}>SAVED</div>
         </div>
         <div style={{ display: "flex", marginTop: "14px", borderTop: "1px solid #141414", paddingTop: "12px" }}>
           {[
-            { label: "완료", val: `${completed}/100`, color: "#7fff7f" },
-            { label: "스트릭", val: `${streak}일`, color: "#ffdd57" },
-            { label: "달성률", val: `${completed}%`, color: "#7fb3ff" },
+            { label: "완료", val: `${completed}/100`, color: "#1a8c3a" },
+            { label: "스트릭", val: `${streak}일`, color: "#b45309" },
+            { label: "달성률", val: `${completed}%`, color: "#2563eb" },
           ].map((s, i) => (
             <div key={s.label} style={{ flex: 1, textAlign: i === 0 ? "left" : i === 2 ? "right" : "center" }}>
               <div style={{ fontSize: mob ? "16px" : "20px", fontWeight: "700", color: s.color, lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontSize: "9px", color: "#333", letterSpacing: "2px", marginTop: "3px" }}>{s.label}</div>
+              <div style={{ fontSize: "9px", color: "#bbbbbb", letterSpacing: "2px", marginTop: "3px" }}>{s.label}</div>
             </div>
           ))}
         </div>
       </header>
 
-      <div style={{ height: "2px", background: "#111" }}>
-        <div style={{ height: "100%", width: `${completed}%`, background: "linear-gradient(90deg,#7fb3ff,#7fff7f)", transition: "width 0.8s cubic-bezier(.16,1,.3,1)" }} />
+      <div style={{ height: "2px", background: "#e8e8e4" }}>
+        <div style={{ height: "100%", width: `${completed}%`, background: "linear-gradient(90deg,#2563eb,#1a8c3a)", transition: "width 0.8s cubic-bezier(.16,1,.3,1)" }} />
       </div>
 
       {streak === 0 && completed < 100 && (
-        <div style={{ background: "#0e0900", borderBottom: "1px solid #221c00", padding: `9px ${p}`, fontSize: "11px", color: "#ffdd57" }}>⚡ {nagMsg}</div>
+        <div style={{ background: "#fffbeb", borderBottom: "1px solid #221c00", padding: `9px ${p}`, fontSize: "11px", color: "#b45309" }}>⚡ {nagMsg}</div>
       )}
       {streak >= 3 && (
-        <div style={{ background: "#001209", borderBottom: "1px solid #002516", padding: `9px ${p}`, fontSize: "11px", color: "#7fff7f" }}>🔥 {streak}일 연속! 이대로 가자</div>
+        <div style={{ background: "#f0fdf4", borderBottom: "1px solid #002516", padding: `9px ${p}`, fontSize: "11px", color: "#1a8c3a" }}>🔥 {streak}일 연속! 이대로 가자</div>
       )}
 
       <nav style={{ display: "flex", borderBottom: "1px solid #1a1a1a", padding: `0 ${p}` }}>
         {[["calendar", "캘린더"], ["today", "오늘"], ["all", "전체 100"]].map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} style={{
             background: "none", border: "none", padding: mob ? "11px 0" : "13px 0", marginRight: "22px",
-            color: view === v ? "#fff" : "#444", cursor: "pointer",
+            color: view === v ? "#111110" : "#aaaaaa", cursor: "pointer",
             fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase",
             borderBottom: view === v ? "1px solid #7fb3ff" : "1px solid transparent",
           }}>{label}</button>
@@ -298,17 +298,17 @@ function UploadForm({ mob, onSubmit, onCancel }) {
   const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
 
   return (
-    <div style={{ marginTop: "16px", border: "1px solid #1e1e1e", borderRadius: "3px", padding: "16px", background: "#0a0a0a" }}>
-      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#555", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
+    <div style={{ marginTop: "16px", border: "1px solid #1e1e1e", borderRadius: "3px", padding: "16px", background: "#f5f5f2" }}>
+      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#999994", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
 
       {/* 플랫폼 선택 */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "12px" }}>
         {UPLOAD_PLATFORMS.map(p => (
           <button key={p.key} onClick={() => setPlatform(p.key)} style={{
             background: platform === p.key ? `${p.color}14` : "none",
-            border: `1px solid ${platform === p.key ? p.color + "66" : "#1e1e1e"}`,
+            border: `1px solid ${platform === p.key ? p.color + "66" : "#d8d8d4"}`,
             borderRadius: "2px", padding: "7px 0",
-            color: platform === p.key ? p.color : "#444",
+            color: platform === p.key ? p.color : "#aaaaaa",
             cursor: "pointer", fontSize: "11px", letterSpacing: "1px",
             fontFamily: "monospace",
           }}>{p.label}</button>
@@ -320,19 +320,19 @@ function UploadForm({ mob, onSubmit, onCancel }) {
         value={link} onChange={e => setLink(e.target.value)}
         onKeyDown={e => e.key === "Enter" && link.trim() && onSubmit(platform, link)}
         placeholder={selected?.placeholder}
-        style={{ width: "100%", boxSizing: "border-box", background: "#111", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#e8e8e8", fontFamily: "monospace", fontSize: "12px", outline: "none", marginBottom: "10px" }}
+        style={{ width: "100%", boxSizing: "border-box", background: "#e8e8e4", border: `1px solid ${selected?.color}33`, borderRadius: "2px", padding: "10px 12px", color: "#1a1a18", fontFamily: "monospace", fontSize: "12px", outline: "none", marginBottom: "10px" }}
       />
 
       <div style={{ display: "flex", gap: "6px" }}>
         <button onClick={() => link.trim() && onSubmit(platform, link)} style={{
-          flex: 1, background: link.trim() ? "#061008" : "#0d0d0d",
-          border: `1px solid ${link.trim() ? "#7fff7f55" : "#1e1e1e"}`,
-          borderRadius: "2px", color: link.trim() ? "#7fff7f" : "#333",
+          flex: 1, background: link.trim() ? "#f0faf0" : "#111110",
+          border: `1px solid ${link.trim() ? "#7fff7f55" : "#d8d8d4"}`,
+          borderRadius: "2px", color: link.trim() ? "#1a8c3a" : "#bbbbbb",
           cursor: link.trim() ? "pointer" : "default",
           fontSize: "11px", padding: "10px", letterSpacing: "1px", fontFamily: "monospace",
         }}>✓ 업로드 완료 — 미션 클리어</button>
         {onCancel && (
-          <button onClick={onCancel} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#333", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "monospace" }}>취소</button>
+          <button onClick={onCancel} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#bbbbbb", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "monospace" }}>취소</button>
         )}
       </div>
     </div>
@@ -342,20 +342,20 @@ function UploadForm({ mob, onSubmit, onCancel }) {
 // ─── 오늘 패널 ────────────────────────────────────────────
 function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
   const [showUpload, setShowUpload] = useState(false);
-  if (!challenge) return <p style={{ color: "#555" }}>챌린지 완주! 🎉</p>;
+  if (!challenge) return <p style={{ color: "#999994" }}>챌린지 완주! 🎉</p>;
   const done = record?.done;
   const platformInfo = UPLOAD_PLATFORMS.find(p => p.key === record?.platform);
 
   return (
     <div style={{ maxWidth: mob ? "100%" : "560px" }}>
       <div style={{
-        border: `1px solid ${done ? "#1d3320" : "#1c1c1c"}`,
+        border: `1px solid ${done ? "#c8e8c8" : "#dcdcd8"}`,
         borderRadius: "3px", padding: mob ? "18px" : "24px 28px",
-        background: done ? "#060f07" : "#0d0d0d",
+        background: done ? "#f0faf0" : "#111110",
         transition: "all 0.4s", marginBottom: "12px",
       }}>
-        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#444", marginBottom: "8px" }}>DAY {challenge.id} / 100</div>
-        <h2 style={{ fontSize: mob ? "26px" : "34px", fontWeight: "700", margin: "0 0 14px", letterSpacing: "-1px", lineHeight: 1.1, color: done ? "#7fff7f" : "#fff" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#aaaaaa", marginBottom: "8px" }}>DAY {challenge.id} / 100</div>
+        <h2 style={{ fontSize: mob ? "26px" : "34px", fontWeight: "700", margin: "0 0 14px", letterSpacing: "-1px", lineHeight: 1.1, color: done ? "#1a8c3a" : "#111110" }}>
           {challenge.title}
         </h2>
 
@@ -365,32 +365,32 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
         </p>
 
         <a href="https://www.dailyui.co" target="_blank" rel="noreferrer"
-          style={{ fontSize: "10px", color: "#2a2a2a", textDecoration: "none" }}>dailyui.co →</a>
+          style={{ fontSize: "10px", color: "#c0c0bc", textDecoration: "none" }}>dailyui.co →</a>
 
         {/* 완료 상태 */}
         {done ? (
           <div style={{ marginTop: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-              <span style={{ fontSize: "11px", color: "#7fff7f", letterSpacing: "1px" }}>✓ 미션 클리어</span>
+              <span style={{ fontSize: "11px", color: "#1a8c3a", letterSpacing: "1px" }}>✓ 미션 클리어</span>
               {platformInfo && <span style={{ fontSize: "10px", color: platformInfo.color, border: `1px solid ${platformInfo.color}33`, padding: "2px 8px", borderRadius: "2px" }}>{platformInfo.label}</span>}
-              <span style={{ fontSize: "10px", color: "#2a2a2a" }}>{record.doneAt}</span>
+              <span style={{ fontSize: "10px", color: "#c0c0bc" }}>{record.doneAt}</span>
             </div>
             <a href={record.link} target="_blank" rel="noreferrer"
-              style={{ fontSize: "11px", color: "#7fb3ff", textDecoration: "none", wordBreak: "break-all" }}>↗ {record.link}</a>
+              style={{ fontSize: "11px", color: "#2563eb", textDecoration: "none", wordBreak: "break-all" }}>↗ {record.link}</a>
             <div style={{ marginTop: "12px" }}>
-              <button onClick={onUndo} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#333", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace" }}>↩ 취소</button>
+              <button onClick={onUndo} style={{ background: "none", border: "1px solid #1e1e1e", borderRadius: "2px", color: "#bbbbbb", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace" }}>↩ 취소</button>
             </div>
           </div>
         ) : (
           <div style={{ marginTop: "20px" }}>
             {/* 업로드해야 완료 가능 안내 */}
-            <div style={{ fontSize: "11px", color: "#444", marginBottom: "12px", letterSpacing: "0.3px" }}>
+            <div style={{ fontSize: "11px", color: "#aaaaaa", marginBottom: "12px", letterSpacing: "0.3px" }}>
               📌 Dribbble, Behance, Twitter/X 중 한 곳에 업로드하고 링크 등록하면 완료!
             </div>
             {!showUpload
               ? <button onClick={() => setShowUpload(true)} style={{
-                  background: "#061008", border: "1px solid #7fff7f44", borderRadius: "2px",
-                  color: "#7fff7f", cursor: "pointer", fontSize: "12px", padding: "10px 20px",
+                  background: "#f0faf0", border: "1px solid #7fff7f44", borderRadius: "2px",
+                  color: "#1a8c3a", cursor: "pointer", fontSize: "12px", padding: "10px 20px",
                   letterSpacing: "1px", fontFamily: "monospace",
                   width: mob ? "100%" : "auto",
                 }}>업로드 링크 등록하기</button>
@@ -401,8 +401,8 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
       </div>
 
       {/* 레퍼런스 */}
-      <div style={{ border: "1px solid #1a1a1a", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#0d0d0d" }}>
-        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#333", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
+      <div style={{ border: "1px solid #1a1a1a", borderRadius: "3px", padding: mob ? "14px" : "16px 22px", background: "#111110" }}>
+        <div style={{ fontSize: "9px", letterSpacing: "4px", color: "#bbbbbb", marginBottom: "10px" }}>REFERENCES — {challenge.title}</div>
         <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "6px" }}>
           {REFS(challenge.title).map(ref => (
             <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
@@ -471,9 +471,9 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {isCurrentMonth && today && (
         <div style={{
           marginBottom: "20px",
-          border: `1px solid ${showToday ? "#7fb3ff66" : "#1a1a1a"}`,
+          border: `1px solid ${showToday ? "#2563eb66" : "#e0e0dc"}`,
           borderRadius: "3px",
-          background: "#05080f",
+          background: "#eff6ff",
           overflow: "hidden",
           transition: "all 0.3s",
         }}>
@@ -488,14 +488,14 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div style={{
-                background: "#7fb3ff", color: "#000", fontSize: "9px",
+                background: "#2563eb", color: "#000", fontSize: "9px",
                 letterSpacing: "2px", padding: "3px 8px", borderRadius: "2px", fontWeight: "700",
               }}>TODAY</div>
-              <span style={{ fontSize: mob ? "15px" : "18px", fontWeight: "700", color: "#fff", letterSpacing: "-0.5px" }}>
+              <span style={{ fontSize: mob ? "15px" : "18px", fontWeight: "700", color: "#111110", letterSpacing: "-0.5px" }}>
                 Day {today.id}: {today.title}
               </span>
             </div>
-            <span style={{ color: "#444", fontSize: "12px" }}>{showToday ? "▲" : "▼"}</span>
+            <span style={{ color: "#aaaaaa", fontSize: "12px" }}>{showToday ? "▲" : "▼"}</span>
           </div>
 
           {/* 챌린지 상세 */}
@@ -508,17 +508,17 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
               {/* 완료 상태 */}
               {todayRecord?.done ? (
                 <div>
-                  <div style={{ fontSize: "11px", color: "#7fff7f", marginBottom: "8px" }}>✓ 미션 클리어!</div>
+                  <div style={{ fontSize: "11px", color: "#1a8c3a", marginBottom: "8px" }}>✓ 미션 클리어!</div>
                   {todayRecord.link && (
                     <a href={todayRecord.link} target="_blank" rel="noreferrer"
-                      style={{ fontSize: "11px", color: "#7fb3ff", textDecoration: "none", wordBreak: "break-all" }}>
+                      style={{ fontSize: "11px", color: "#2563eb", textDecoration: "none", wordBreak: "break-all" }}>
                       ↗ {todayRecord.link}
                     </a>
                   )}
                   <div style={{ marginTop: "10px" }}>
                     <button onClick={onUndoToday} style={{
                       background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
-                      color: "#333", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace",
+                      color: "#bbbbbb", cursor: "pointer", fontSize: "10px", padding: "5px 12px", fontFamily: "monospace",
                     }}>↩ 취소</button>
                   </div>
                 </div>
@@ -528,13 +528,13 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
 
               {/* 레퍼런스 */}
               <div style={{ marginTop: "14px" }}>
-                <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#2a2a2a", marginBottom: "8px" }}>REFERENCES</div>
+                <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#c0c0bc", marginBottom: "8px" }}>REFERENCES</div>
                 <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: "5px" }}>
                   {[
-                    { label: "Mobbin", color: "#7fff7f", url: `https://mobbin.com/search/screens?q=${encodeURIComponent(today.title)}` },
-                    { label: "Dribbble", color: "#ffdd57", url: `https://dribbble.com/search/${encodeURIComponent(today.title.replace(/\s+/g,"-").toLowerCase())}` },
-                    { label: "Behance", color: "#7fb3ff", url: `https://www.behance.net/search/projects?search=${encodeURIComponent(today.title)}+ui` },
-                    { label: "Pinterest", color: "#ff9f7f", url: `https://pinterest.com/search/pins/?q=${encodeURIComponent(today.title)}+ui+design` },
+                    { label: "Mobbin", color: "#1a8c3a", url: `https://mobbin.com/search/screens?q=${encodeURIComponent(today.title)}` },
+                    { label: "Dribbble", color: "#b45309", url: `https://dribbble.com/search/${encodeURIComponent(today.title.replace(/\s+/g,"-").toLowerCase())}` },
+                    { label: "Behance", color: "#2563eb", url: `https://www.behance.net/search/projects?search=${encodeURIComponent(today.title)}+ui` },
+                    { label: "Pinterest", color: "#c2410c", url: `https://pinterest.com/search/pins/?q=${encodeURIComponent(today.title)}+ui+design` },
                   ].map(ref => (
                     <a key={ref.label} href={ref.url} target="_blank" rel="noreferrer"
                       style={{ display: "block", padding: "6px 8px", border: `1px solid ${ref.color}22`, borderRadius: "2px", color: ref.color, fontSize: "10px", textDecoration: "none", background: `${ref.color}08`, textAlign: "center" }}>
@@ -552,12 +552,12 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
         <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} style={{
           background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
-          color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
+          color: "#888884", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
         }}>←</button>
-        <div style={{ fontSize: mob ? "13px" : "15px", color: "#fff", letterSpacing: "2px" }}>{monthLabel}</div>
+        <div style={{ fontSize: mob ? "13px" : "15px", color: "#111110", letterSpacing: "2px" }}>{monthLabel}</div>
         <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} style={{
           background: "none", border: "1px solid #1e1e1e", borderRadius: "2px",
-          color: "#666", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
+          color: "#888884", cursor: "pointer", fontSize: "14px", padding: "6px 12px", fontFamily: "monospace",
         }}>→</button>
       </div>
 
@@ -566,7 +566,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
         {DAY_LABELS.map((d, i) => (
           <div key={d} style={{
             textAlign: "center", fontSize: "10px", letterSpacing: "1px",
-            color: i === 0 ? "#ff6b6b" : i === 6 ? "#7fb3ff" : "#444",
+            color: i === 0 ? "#ff6b6b" : i === 6 ? "#2563eb" : "#aaaaaa",
             padding: "6px 0",
           }}>{d}</div>
         ))}
@@ -575,7 +575,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {/* 캘린더 그리드 */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
         {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#0a0a0a", borderRadius: "2px" }} />;
+          if (!day) return <div key={`e-${idx}`} style={{ aspectRatio: "1", background: "#f5f5f2", borderRadius: "2px" }} />;
 
           const entry = dateMap[day];
           const thumb = entry ? thumbnails[entry.id] : null;
@@ -586,9 +586,9 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
               onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
               style={{
                 aspectRatio: "1",
-                background: entry ? "#0d1a0d" : isToday ? "#050d1a" : "#0b0b0b",
+                background: entry ? "#f0faf0" : isToday ? "#050d1a" : "#f0f0ed",
                 border: `${isToday ? "2px" : "1px"} solid ${
-                  isToday ? "#7fb3ff" : entry ? "#1d3320" : "#141414"
+                  isToday ? "#2563eb" : entry ? "#c8e8c8" : "#e4e4e0"
                 }`,
                 borderRadius: "2px",
                 position: "relative",
@@ -608,7 +608,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
               <div style={{
                 position: "absolute", top: "3px", left: "4px",
                 fontSize: mob ? "9px" : "10px",
-                color: isToday ? "#7fb3ff" : entry ? "#7fff7f" : "#444",
+                color: isToday ? "#2563eb" : entry ? "#1a8c3a" : "#aaaaaa",
                 fontFamily: "monospace", zIndex: 1, fontWeight: isToday ? "700" : "400",
                 textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none",
               }}>{day}</div>
@@ -618,7 +618,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
                 <div style={{
                   position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <div style={{ fontSize: "9px", color: "#7fb3ff", letterSpacing: "1px", fontFamily: "monospace" }}>●</div>
+                  <div style={{ fontSize: "9px", color: "#2563eb", letterSpacing: "1px", fontFamily: "monospace" }}>●</div>
                 </div>
               )}
 
@@ -627,7 +627,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
                 <div style={{
                   position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <div style={{ fontSize: mob ? "14px" : "18px", color: "#7fff7f" }}>✓</div>
+                  <div style={{ fontSize: mob ? "14px" : "18px", color: "#1a8c3a" }}>✓</div>
                 </div>
               )}
 
@@ -643,9 +643,9 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
         })}
       </div>
 
-      <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#2a2a2a", letterSpacing: "1px", flexWrap: "wrap" }}>
-        <span style={{ color: "#7fb3ff" }}>■ 오늘</span>
-        <span style={{ color: "#7fff7f" }}>✓ 완료</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#c0c0bc", letterSpacing: "1px", flexWrap: "wrap" }}>
+        <span style={{ color: "#2563eb" }}>■ 오늘</span>
+        <span style={{ color: "#1a8c3a" }}>✓ 완료</span>
         <span>클릭 → 업로드 링크</span>
       </div>
     </div>
@@ -671,7 +671,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
         {[["all", "전체"], ["todo", "미완료"], ["done", "완료"]].map(([v, label]) => (
           <button key={v} onClick={() => setFilter(v)} style={{
             background: filter === v ? "#181818" : "none",
-            border: `1px solid ${filter === v ? "#2a2a2a" : "#141414"}`,
+            border: `1px solid ${filter === v ? "#c0c0bc" : "#e4e4e0"}`,
             borderRadius: "2px", padding: mob ? "8px 0" : "5px 0",
             color: filter === v ? "#ccc" : "#3a3a3a", cursor: "pointer",
             fontSize: "10px", letterSpacing: "2px", fontFamily: "monospace",
@@ -691,17 +691,17 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
           return (
             <div key={c.id} style={{
-              border: `1px solid ${isCurrent ? "#7fb3ff28" : done ? "#1a3020" : "#111"}`,
+              border: `1px solid ${isCurrent ? "#7fb3ff28" : done ? "#c8e8c8" : "#e8e8e4"}`,
               borderRadius: "2px",
-              background: isCurrent ? "#05080f" : done ? "#050e07" : "#0b0b0b",
+              background: isCurrent ? "#eff6ff" : done ? "#f0faf0" : "#f0f0ed",
             }}>
               <div style={{ padding: mob ? "12px 10px" : "11px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "10px", color: "#2a2a2a", minWidth: "20px", flexShrink: 0 }}>{String(c.id).padStart(2, "0")}</span>
+                <span style={{ fontSize: "10px", color: "#c0c0bc", minWidth: "20px", flexShrink: 0 }}>{String(c.id).padStart(2, "0")}</span>
 
                 <span onClick={() => setExpanded(isExpanded ? null : c.id)}
-                  style={{ flex: 1, fontSize: mob ? "13px" : "12px", color: done ? "#5dcc6a" : isCurrent ? "#7fb3ff" : "#666", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+                  style={{ flex: 1, fontSize: mob ? "13px" : "12px", color: done ? "#16a34a" : isCurrent ? "#2563eb" : "#888884", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
                   {c.title}
-                  {isCurrent && !mob && <span style={{ fontSize: "9px", color: "#7fb3ff66", letterSpacing: "2px", marginLeft: "8px" }}>← TODAY</span>}
+                  {isCurrent && !mob && <span style={{ fontSize: "9px", color: "#2563eb66", letterSpacing: "2px", marginLeft: "8px" }}>← TODAY</span>}
                 </span>
 
                 {/* 업로드 플랫폼 뱃지 */}
@@ -713,7 +713,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
                 )}
 
                 <button onClick={() => setRefOpen(isRefOpen ? null : c.id)} style={{
-                  background: "none", border: "none", color: isRefOpen ? "#ffdd57" : "#252525",
+                  background: "none", border: "none", color: isRefOpen ? "#b45309" : "#cccccc",
                   cursor: "pointer", fontSize: "9px", letterSpacing: "1px", padding: "0 3px", flexShrink: 0,
                 }}>REF</button>
 
@@ -725,7 +725,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
                     }}>업로드</button>
                   : <button onClick={() => onUndo(c.id)} style={{
                       background: "none", border: "1px solid #1a3020", borderRadius: "2px",
-                      color: "#5dcc6a", cursor: "pointer", fontSize: "10px",
+                      color: "#16a34a", cursor: "pointer", fontSize: "10px",
                       padding: mob ? "6px 10px" : "3px 9px", flexShrink: 0, fontFamily: "monospace",
                     }}>✓</button>
                 }
@@ -764,7 +764,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
           );
         })}
       </div>
-      <div style={{ marginTop: "10px", fontSize: "10px", color: "#252525" }}>💡 제목 클릭 → 미션 설명 / 업로드 버튼 → 완료 처리</div>
+      <div style={{ marginTop: "10px", fontSize: "10px", color: "#cccccc" }}>💡 제목 클릭 → 미션 설명 / 업로드 버튼 → 완료 처리</div>
     </div>
   );
 }
