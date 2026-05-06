@@ -671,7 +671,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
             background: filter === v ? "#F0F0F0" : "none",
             border: `1px solid ${filter === v ? "#AAAAAA" : "#F0F0F0"}`,
             borderRadius: "2px", padding: mob ? "8px 0" : "5px 0",
-            color: filter === v ? "#ccc" : "#777777", cursor: "pointer",
+            color: filter === v ? "#777777" : "#777777", cursor: "pointer",
             fontSize: "10px", letterSpacing: "2px", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
           }}>{label}</button>
         ))}
