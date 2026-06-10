@@ -604,6 +604,11 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
     );
   }
 
+  function openCompletedEdit(day, entry) {
+    setSelectedDay(day);
+    setSelectedChallengeId(Number(entry.id));
+  }
+
   function closeRetroUpload() {
     setSelectedDay(null);
     setSelectedChallengeId(null);
@@ -670,7 +675,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           const isPast = cellDate < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
           const isSelected = selectedDay === day;
           return (
-            <div key={day} onClick={() => entry?.rec?.link ? window.open(entry.rec.link, "_blank") : isPast && openRetroUpload(day)}
+            <div key={day} onClick={() => entry ? openCompletedEdit(day, entry) : isPast && openRetroUpload(day)}
               style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday || isSelected ? "2px" : "1px"} solid ${isSelected ? "#0ACF83" : isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry || isPast ? "pointer" : "default", boxShadow: isSelected ? "0 0 0 3px #0ACF8322" : isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
               {thumb && <img src={thumb} alt="" onError={() => {
                 setThumbnails(prev => {
@@ -702,9 +707,39 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       {selectedDay && (
         <div style={{ marginTop: "14px", border: "1px solid #0ACF8333", borderRadius: "8px", padding: mob ? "14px" : "18px", background: "#FFFFFF" }}>
           <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#AAAAAA", marginBottom: "10px" }}>
-            {year}. {month + 1}. {selectedDay}. 게시물 추가
+            {year}. {month + 1}. {selectedDay}. {dateMap[selectedDay] ? "게시물 편집" : "게시물 추가"}
           </div>
-          {availableChallenges.length > 0 ? (
+          {dateMap[selectedDay] ? (
+            <>
+              <div style={{ fontSize: "11px", color: "#777777", marginBottom: "10px", padding: "8px 12px", background: "#F8F8F8", borderRadius: "6px" }}>
+                <strong style={{ color: "#0ACF83" }}>Day {selectedChallengeId}: {challenges[selectedChallengeId - 1]?.title}</strong>
+                {dateMap[selectedDay].rec.link && (
+                  <a href={dateMap[selectedDay].rec.link} target="_blank" rel="noreferrer" style={{ display: "block", fontSize: "10px", color: "#1ABCFE", textDecoration: "none", marginTop: "5px", wordBreak: "break-all" }}>
+                    기존 게시물 열기 ↗
+                  </a>
+                )}
+              </div>
+              <UploadForm
+                mob={mob}
+                onSubmit={async (platform, link, file) => {
+                  const doneAt = formatLocalDate(new Date(year, month, selectedDay));
+                  await onSubmitRetro(selectedChallengeId, platform, link, file, doneAt);
+                  setThumbnails(prev => {
+                    const next = { ...prev };
+                    delete next[selectedChallengeId];
+                    return next;
+                  });
+                  setFailedThumbnails(prev => {
+                    const next = { ...prev };
+                    delete next[selectedChallengeId];
+                    return next;
+                  });
+                  closeRetroUpload();
+                }}
+                onCancel={closeRetroUpload}
+              />
+            </>
+          ) : availableChallenges.length > 0 ? (
             <>
               <select
                 value={selectedChallengeId ?? ""}
@@ -721,6 +756,16 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
                   onSubmit={async (platform, link, file) => {
                     const doneAt = formatLocalDate(new Date(year, month, selectedDay));
                     await onSubmitRetro(selectedChallengeId, platform, link, file, doneAt);
+                    setThumbnails(prev => {
+                      const next = { ...prev };
+                      delete next[selectedChallengeId];
+                      return next;
+                    });
+                    setFailedThumbnails(prev => {
+                      const next = { ...prev };
+                      delete next[selectedChallengeId];
+                      return next;
+                    });
                     closeRetroUpload();
                   }}
                   onCancel={closeRetroUpload}
@@ -736,7 +781,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
       <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#CCCCCC", flexWrap: "wrap" }}>
         <span style={{ color: "#1ABCFE" }}>■ 오늘</span>
         <span style={{ color: "#0ACF83" }}>✓ 완료</span>
-        <span>과거 날짜 클릭 → 게시물 추가</span>
+        <span>날짜 클릭 → 게시물 추가·편집</span>
       </div>
     </div>
   );
