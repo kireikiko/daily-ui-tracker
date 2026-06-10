@@ -6,6 +6,23 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+const STORAGE_BUCKET = "daily-ui-uploads";
+
+function formatLocalDate(date = new Date()) {
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
+}
+
+function parseStoredDate(value) {
+  const parts = String(value || "").match(/\d+/g);
+  if (!parts || parts.length < 3) return null;
+  return { year: Number(parts[0]), month: Number(parts[1]) - 1, day: Number(parts[2]) };
+}
+
+function isImageUrl(url) {
+  return /\.(png|jpe?g|webp|gif)(?:[?#].*)?$/i.test(url || "")
+    || url?.includes(`/storage/v1/object/public/${STORAGE_BUCKET}/`);
+}
+
 // Auth helper
 async function signInWithGoogle() {
   await supabase.auth.signInWithOAuth({
@@ -144,6 +161,11 @@ const UPLOAD_PLATFORMS = [
   { key: "twitter", label: "Twitter/X", color: "#0ACF83", placeholder: "https://twitter.com/..." },
   { key: "other", label: "기타", color: "#aaa", placeholder: "https://..." },
 ];
+const IMAGE_PLATFORM = { key: "image", label: "PNG", color: "#A259FF" };
+
+function getPlatformInfo(key) {
+  return key === "image" ? IMAGE_PLATFORM : UPLOAD_PLATFORMS.find(platform => platform.key === key);
+}
 
 function useMobile() {
   const [m, setM] = useState(typeof window !== "undefined" && window.innerWidth < 600);
@@ -205,17 +227,33 @@ export default function App() {
   const completed = Object.values(records).filter(r => r?.done).length;
   const streak = (() => { let s = 0; for (let i = currentDay - 1; i >= 1; i--) { if (records[i]?.done) s++; else break; } return s; })();
 
-  async function submitUpload(id, platform, link) {
-    if (!link.trim()) return;
+  async function uploadPng(id, file) {
+    if (!user?.id || !file) throw new Error("로그인이 필요합니다.");
+    if (file.type !== "image/png") throw new Error("PNG 파일만 업로드할 수 있습니다.");
+    if (file.size > 10 * 1024 * 1024) throw new Error("PNG는 10MB 이하만 업로드할 수 있습니다.");
+
+    const path = `${user.id}/day-${id}-${Date.now()}.png`;
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
+      contentType: "image/png",
+      upsert: false,
+    });
+    if (error) throw error;
+    return supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+  }
+
+  async function submitUpload(id, platform, link, file, doneAt = formatLocalDate()) {
+    const savedLink = file ? await uploadPng(id, file) : link.trim();
+    if (!savedLink) return;
     const challenge = CHALLENGES[id - 1];
-    const doneAt = new Date().toLocaleDateString("ko-KR");
-    setRecords(r => ({ ...r, [id]: { done: true, doneAt, platform, link: link.trim() } }));
+    const savedPlatform = file ? "image" : platform;
+    setRecords(r => ({ ...r, [id]: { done: true, doneAt, platform: savedPlatform, link: savedLink } }));
     if (id === currentDay) setCurrentDay(d => Math.min(d + 1, 100));
-    await supabase.from("tracker").upsert({ id, day: id, title: challenge.title, done: true, platform, link: link.trim(), done_at: doneAt, user_id: user?.id });
+    const { error } = await supabase.from("tracker").upsert({ id, day: id, title: challenge.title, done: true, platform: savedPlatform, link: savedLink, done_at: doneAt, user_id: user?.id });
+    if (error) throw error;
     const webhookUrl = import.meta.env.VITE_DISCORD_WEBHOOK;
     if (webhookUrl && user?.id === import.meta.env.VITE_OWNER_ID) {
-      const labels = { dribbble: "Dribbble", behance: "Behance", twitter: "Twitter/X", other: "기타" };
-      fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `🎉 **Day ${id}: ${challenge.title}** 미션 클리어!\n${labels[platform] || platform} → ${link.trim()}` }) }).catch(() => {});
+      const labels = { dribbble: "Dribbble", behance: "Behance", twitter: "Twitter/X", other: "기타", image: "PNG" };
+      fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `🎉 **Day ${id}: ${challenge.title}** 미션 클리어!\n${labels[savedPlatform] || savedPlatform} → ${savedLink}` }) }).catch(() => {});
     }
   }
 
@@ -317,16 +355,12 @@ export default function App() {
       <main style={{ padding: mob ? "16px 14px" : "32px 6vw", width: "100%", boxSizing: "border-box" }}>
         {view === "calendar"
           ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES}
-              today={today} onSubmitToday={(platform, link) => submitUpload(today?.id, platform, link)}
+              today={today} onSubmitToday={(platform, link, file) => submitUpload(today?.id, platform, link, file)}
               onUndoToday={() => undoDone(today?.id)} todayRecord={records[today?.id]} currentDay={currentDay}
-              onSubmitRetro={async (id, platform, link, doneAt) => {
-                const challenge = CHALLENGES[id - 1];
-                setRecords(r => ({ ...r, [id]: { done: true, doneAt, platform, link: link.trim() } }));
-                await supabase.from("tracker").upsert({ id, day: id, title: challenge.title, done: true, platform, link: link.trim(), done_at: doneAt, user_id: user?.id });
-              }} />
+              onSubmitRetro={(id, platform, link, file, doneAt) => submitUpload(id, platform, link, file, doneAt)} />
           : view === "today"
           ? <TodayPanel mob={mob} challenge={today} record={records[today?.id]}
-              onSubmit={(platform, link) => submitUpload(today.id, platform, link)}
+              onSubmit={(platform, link, file) => submitUpload(today.id, platform, link, file)}
               onUndo={() => undoDone(today.id)} />
           : <AllPanel mob={mob} challenges={CHALLENGES} records={records}
               onSubmit={submitUpload} onUndo={undoDone} currentDay={currentDay} />
@@ -338,21 +372,85 @@ export default function App() {
 
 // ─── 업로드 폼 ──────────────────────────────────────────
 function UploadForm({ mob, onSubmit, onCancel }) {
+  const [mode, setMode] = useState("link");
   const [platform, setPlatform] = useState("dribbble");
   const [link, setLink] = useState("");
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
+
+  useEffect(() => {
+    if (!file) {
+      setPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const canSubmit = mode === "png" ? Boolean(file) : Boolean(link.trim());
+
+  async function handleSubmit() {
+    if (!canSubmit || submitting) return;
+    setError("");
+    setSubmitting(true);
+    try {
+      await onSubmit(platform, link, mode === "png" ? file : null);
+    } catch (uploadError) {
+      setError(uploadError?.message || "업로드에 실패했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div style={{ marginTop: "16px", border: "1px solid #F0F0F0", borderRadius: "6px", padding: "16px", background: "#FAFAFA" }}>
-      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#888888", marginBottom: "12px" }}>업로드 링크 등록 — 완료 조건</div>
+      <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#888888", marginBottom: "12px" }}>게시물 등록 — 완료 조건</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "12px" }}>
-        {UPLOAD_PLATFORMS.map(p => (
-          <button key={p.key} onClick={() => setPlatform(p.key)} style={{ background: platform === p.key ? `${p.color}14` : "none", border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`, borderRadius: "4px", padding: "7px 0", color: platform === p.key ? p.color : "#888888", cursor: "pointer", fontSize: "11px", fontFamily: "'Inter', sans-serif" }}>{p.label}</button>
+        {[["link", "링크"], ["png", "PNG 파일"]].map(([value, label]) => (
+          <button key={value} type="button" onClick={() => { setMode(value); setError(""); }} style={{ background: mode === value ? "#FFFFFF" : "none", border: `1px solid ${mode === value ? "#CCCCCC" : "#F0F0F0"}`, borderRadius: "4px", padding: "8px 0", color: mode === value ? "#555555" : "#AAAAAA", cursor: "pointer", fontSize: "11px", fontFamily: "'Inter', sans-serif" }}>{label}</button>
         ))}
       </div>
-      <input value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => e.key === "Enter" && link.trim() && onSubmit(platform, link)} placeholder={selected?.placeholder}
-        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "4px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }} />
+      {mode === "link" ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "12px" }}>
+            {UPLOAD_PLATFORMS.map(p => (
+              <button key={p.key} type="button" onClick={() => setPlatform(p.key)} style={{ background: platform === p.key ? `${p.color}14` : "none", border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`, borderRadius: "4px", padding: "7px 0", color: platform === p.key ? p.color : "#888888", cursor: "pointer", fontSize: "11px", fontFamily: "'Inter', sans-serif" }}>{p.label}</button>
+            ))}
+          </div>
+          <input value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder={selected?.placeholder}
+            style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "4px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }} />
+        </>
+      ) : (
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", border: "1px dashed #A259FF55", borderRadius: "6px", padding: "14px", background: "#FFFFFF", color: "#A259FF", cursor: "pointer", textAlign: "center", fontSize: "11px" }}>
+            {file ? file.name : "PNG 선택"}
+            <input type="file" accept="image/png,.png" onChange={event => {
+              const nextFile = event.target.files?.[0] || null;
+              setError("");
+              if (nextFile && nextFile.type !== "image/png") {
+                setFile(null);
+                setError("PNG 파일만 업로드할 수 있습니다.");
+                return;
+              }
+              if (nextFile && nextFile.size > 10 * 1024 * 1024) {
+                setFile(null);
+                setError("PNG는 10MB 이하만 업로드할 수 있습니다.");
+                return;
+              }
+              setFile(nextFile);
+            }} style={{ display: "none" }} />
+          </label>
+          {preview && <img src={preview} alt="PNG 미리보기" style={{ display: "block", width: "100%", maxHeight: "220px", objectFit: "contain", marginTop: "10px", borderRadius: "6px", background: "#F5F5F5" }} />}
+          <div style={{ fontSize: "9px", color: "#AAAAAA", marginTop: "6px" }}>PNG · 최대 10MB</div>
+        </div>
+      )}
+      {error && <div style={{ fontSize: "10px", color: "#FF7262", marginBottom: "10px" }}>{error}</div>}
       <div style={{ display: "flex", gap: "6px" }}>
-        <button onClick={() => link.trim() && onSubmit(platform, link)} style={{ flex: 1, background: link.trim() ? "#F0FFF8" : "#FFFFFF", border: `1px solid ${link.trim() ? "#0ACF8344" : "#F0F0F0"}`, borderRadius: "4px", color: link.trim() ? "#0ACF83" : "#999999", cursor: link.trim() ? "pointer" : "default", fontSize: "11px", padding: "10px", fontFamily: "'Inter', sans-serif" }}>✓ 업로드 완료 — 미션 클리어</button>
+        <button type="button" onClick={handleSubmit} disabled={!canSubmit || submitting} style={{ flex: 1, background: canSubmit ? "#F0FFF8" : "#FFFFFF", border: `1px solid ${canSubmit ? "#0ACF8344" : "#F0F0F0"}`, borderRadius: "4px", color: canSubmit ? "#0ACF83" : "#999999", cursor: canSubmit && !submitting ? "pointer" : "default", fontSize: "11px", padding: "10px", fontFamily: "'Inter', sans-serif" }}>{submitting ? "업로드 중..." : "✓ 등록 완료 — 미션 클리어"}</button>
         {onCancel && <button onClick={onCancel} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "4px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', sans-serif" }}>취소</button>}
       </div>
     </div>
@@ -364,7 +462,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
   const [showUpload, setShowUpload] = useState(false);
   if (!challenge) return <p style={{ color: "#888888" }}>챌린지 완주! 🎉</p>;
   const done = record?.done;
-  const platformInfo = UPLOAD_PLATFORMS.find(p => p.key === record?.platform);
+  const platformInfo = getPlatformInfo(record?.platform);
   return (
     <div style={{ width: "100%", display: mob ? "block" : "grid", gridTemplateColumns: "3fr 2fr", gap: "24px", alignItems: "start" }}>
       <div style={{ border: `1px solid ${done ? "#B7F0D4" : "#F0F0F0"}`, borderRadius: "8px", padding: mob ? "18px" : "28px 32px", background: done ? "#F0FFF8" : "#FFFFFF", transition: "all 0.4s" }}>
@@ -425,14 +523,17 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
 
   const monthRecords = Object.entries(records).filter(([, rec]) => {
     if (!rec?.done || !rec?.doneAt) return false;
-    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
-    if (parts.length < 3) return false;
-    return parseInt(parts[0]) === year && parseInt(parts[1]) - 1 === month;
+    const date = parseStoredDate(rec.doneAt);
+    return date?.year === year && date?.month === month;
   });
 
   useEffect(() => {
     monthRecords.forEach(([id, rec]) => {
       if (!rec.link || thumbnails[id]) return;
+      if (isImageUrl(rec.link)) {
+        setThumbnails(prev => ({ ...prev, [id]: rec.link }));
+        return;
+      }
       const workerBase = import.meta.env.VITE_DISCORD_WEBHOOK
         ? import.meta.env.VITE_DISCORD_WEBHOOK.replace(/\/$/, "") : "";
       if (!workerBase) return;
@@ -451,12 +552,29 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
 
   const dateMap = {};
   monthRecords.forEach(([id, rec]) => {
-    const parts = rec.doneAt.replace(/[.]/g, "").trim().split(/\s+/);
-    if (parts.length >= 3) dateMap[parseInt(parts[2])] = { id, rec };
+    const date = parseStoredDate(rec.doneAt);
+    if (date) dateMap[date.day] = { id, rec };
   });
 
   const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
   const todayDay = todayDate.getDate();
+  const availableChallenges = challenges.filter(challenge => !records[challenge.id]?.done);
+
+  function openRetroUpload(day) {
+    const selectedDate = new Date(year, month, day);
+    if (selectedDate >= new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate())) return;
+    setSelectedDay(day);
+    setSelectedChallengeId(
+      availableChallenges.some(challenge => challenge.id === currentDay)
+        ? currentDay
+        : availableChallenges[0]?.id ?? null
+    );
+  }
+
+  function closeRetroUpload() {
+    setSelectedDay(null);
+    setSelectedChallengeId(null);
+  }
 
   return (
     <div style={{ width: "100%" }}>
@@ -515,9 +633,12 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           const entry = dateMap[day];
           const thumb = entry ? thumbnails[entry.id] : null;
           const isToday = isCurrentMonth && day === todayDay;
+          const cellDate = new Date(year, month, day);
+          const isPast = cellDate < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+          const isSelected = selectedDay === day;
           return (
-            <div key={day} onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
-              style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday ? "2px" : "1px"} solid ${isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry ? "pointer" : (day ? "pointer" : "default"), boxShadow: isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
+            <div key={day} onClick={() => entry?.rec?.link ? window.open(entry.rec.link, "_blank") : isPast && openRetroUpload(day)}
+              style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday || isSelected ? "2px" : "1px"} solid ${isSelected ? "#0ACF83" : isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry || isPast ? "pointer" : "default", boxShadow: isSelected ? "0 0 0 3px #0ACF8322" : isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
               {thumb && <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />}
               <div style={{ position: "absolute", top: "3px", left: "4px", fontSize: mob ? "9px" : "10px", color: isToday ? "#1ABCFE" : entry ? "#0ACF83" : "#AAAAAA", zIndex: 1, fontWeight: isToday ? "700" : "400", textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none" }}>{day}</div>
               {isToday && !entry && (
@@ -538,10 +659,44 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
         })}
       </div>
 
+      {selectedDay && (
+        <div style={{ marginTop: "14px", border: "1px solid #0ACF8333", borderRadius: "8px", padding: mob ? "14px" : "18px", background: "#FFFFFF" }}>
+          <div style={{ fontSize: "9px", letterSpacing: "3px", color: "#AAAAAA", marginBottom: "10px" }}>
+            {year}. {month + 1}. {selectedDay}. 게시물 추가
+          </div>
+          {availableChallenges.length > 0 ? (
+            <>
+              <select
+                value={selectedChallengeId ?? ""}
+                onChange={event => setSelectedChallengeId(Number(event.target.value))}
+                style={{ width: "100%", boxSizing: "border-box", background: "#FAFAFA", border: "1px solid #F0F0F0", borderRadius: "4px", padding: "10px 12px", color: "#555555", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }}
+              >
+                {availableChallenges.map(challenge => (
+                  <option key={challenge.id} value={challenge.id}>Day {challenge.id}: {challenge.title}</option>
+                ))}
+              </select>
+              {selectedChallengeId && (
+                <RetroUploadForm
+                  challenge={challenges[selectedChallengeId - 1]}
+                  onSubmit={async (platform, link, file) => {
+                    const doneAt = formatLocalDate(new Date(year, month, selectedDay));
+                    await onSubmitRetro(selectedChallengeId, platform, link, file, doneAt);
+                    closeRetroUpload();
+                  }}
+                  onCancel={closeRetroUpload}
+                />
+              )}
+            </>
+          ) : (
+            <div style={{ fontSize: "11px", color: "#AAAAAA" }}>등록할 미완료 챌린지가 없습니다.</div>
+          )}
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: "16px", marginTop: "12px", fontSize: "9px", color: "#CCCCCC", flexWrap: "wrap" }}>
         <span style={{ color: "#1ABCFE" }}>■ 오늘</span>
         <span style={{ color: "#0ACF83" }}>✓ 완료</span>
-        <span>클릭 → 업로드 링크</span>
+        <span>과거 날짜 클릭 → 게시물 추가</span>
       </div>
     </div>
   );
@@ -576,7 +731,7 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
           const isRefOpen = refOpen === c.id;
           const isExpanded = expanded === c.id;
           const isUploadOpen = uploadOpen === c.id;
-          const platformInfo = UPLOAD_PLATFORMS.find(p => p.key === rec?.platform);
+          const platformInfo = getPlatformInfo(rec?.platform);
           return (
             <div key={c.id} style={{ border: `1px solid ${isCurrent ? "#1ABCFE22" : done ? "#0ACF8322" : "#F5F5F5"}`, borderRadius: "4px", background: isCurrent ? "#F8FBFF" : done ? "#F8FFF8" : "#FAFAFA" }}>
               <div style={{ padding: mob ? "12px 10px" : "11px 16px", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -622,26 +777,13 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
 
 // ─── 소급 업로드 폼 ──────────────────────────────────────
 function RetroUploadForm({ challenge, onSubmit, onCancel }) {
-  const [platform, setPlatform] = useState("twitter");
-  const [link, setLink] = useState("");
-  const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
   return (
     <div>
       <div style={{ fontSize: "11px", color: "#777777", marginBottom: "12px", padding: "8px 12px", background: "#F8F8F8", borderRadius: "6px" }}>
         <strong style={{ color: "#0ACF83" }}>Day {challenge.id}: {challenge.title}</strong>
         <div style={{ fontSize: "10px", color: "#AAAAAA", marginTop: "4px" }}>{challenge.desc.slice(0, 60)}...</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "10px" }}>
-        {UPLOAD_PLATFORMS.map(p => (
-          <button key={p.key} onClick={() => setPlatform(p.key)} style={{ background: platform === p.key ? `${p.color}14` : "none", border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`, borderRadius: "4px", padding: "7px 0", color: platform === p.key ? p.color : "#888888", cursor: "pointer", fontSize: "11px", fontFamily: "'Inter', sans-serif" }}>{p.label}</button>
-        ))}
-      </div>
-      <input value={link} onChange={e => setLink(e.target.value)} placeholder={selected?.placeholder}
-        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "4px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }} />
-      <div style={{ display: "flex", gap: "6px" }}>
-        <button onClick={() => link.trim() && onSubmit(platform, link)} style={{ flex: 1, background: link.trim() ? "#F0FFF8" : "#F5F5F5", border: `1px solid ${link.trim() ? "#0ACF8344" : "#F0F0F0"}`, borderRadius: "4px", color: link.trim() ? "#0ACF83" : "#AAAAAA", cursor: link.trim() ? "pointer" : "default", fontSize: "11px", padding: "10px", fontFamily: "'Inter', sans-serif" }}>✓ 등록하기</button>
-        <button onClick={onCancel} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "4px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', sans-serif" }}>취소</button>
-      </div>
+      <UploadForm onSubmit={onSubmit} onCancel={onCancel} />
     </div>
   );
 }
