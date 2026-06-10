@@ -543,6 +543,7 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
 function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoToday, todayRecord, currentDay, onSubmitRetro }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [thumbnails, setThumbnails] = useState({});
+  const [failedThumbnails, setFailedThumbnails] = useState({});
   const [showToday, setShowToday] = useState(true);
   const [selectedDay, setSelectedDay] = useState(null); // 클릭한 날짜
   const [selectedChallengeId, setSelectedChallengeId] = useState(null); // 해당 챌린지 ID
@@ -561,8 +562,8 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
 
   useEffect(() => {
     monthRecords.forEach(([id, rec]) => {
-      if (!rec.link || thumbnails[id]) return;
-      if (isImageUrl(rec.link)) {
+      if (!rec.link || thumbnails[id] || failedThumbnails[id] === rec.link) return;
+      if (rec.platform === "image" || isImageUrl(rec.link)) {
         setThumbnails(prev => ({ ...prev, [id]: rec.link }));
         return;
       }
@@ -574,7 +575,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
         .then(data => { if (data.image) setThumbnails(prev => ({ ...prev, [id]: data.image })); })
         .catch(() => {});
     });
-  }, [currentMonth, records]);
+  }, [currentMonth, records, failedThumbnails]);
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -671,7 +672,14 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           return (
             <div key={day} onClick={() => entry?.rec?.link ? window.open(entry.rec.link, "_blank") : isPast && openRetroUpload(day)}
               style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday || isSelected ? "2px" : "1px"} solid ${isSelected ? "#0ACF83" : isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry || isPast ? "pointer" : "default", boxShadow: isSelected ? "0 0 0 3px #0ACF8322" : isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
-              {thumb && <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />}
+              {thumb && <img src={thumb} alt="" onError={() => {
+                setThumbnails(prev => {
+                  const next = { ...prev };
+                  delete next[entry.id];
+                  return next;
+                });
+                setFailedThumbnails(prev => ({ ...prev, [entry.id]: thumb }));
+              }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />}
               <div style={{ position: "absolute", top: "3px", left: "4px", fontSize: mob ? "9px" : "10px", color: isToday ? "#1ABCFE" : entry ? "#0ACF83" : "#AAAAAA", zIndex: 1, fontWeight: isToday ? "700" : "400", textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none" }}>{day}</div>
               {isToday && !entry && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
