@@ -373,8 +373,11 @@ export default function App() {
 // ─── 업로드 폼 ──────────────────────────────────────────
 function UploadForm({ mob, onSubmit, onCancel }) {
   const [mode, setMode] = useState("link");
+  const [pngSource, setPngSource] = useState("file");
   const [platform, setPlatform] = useState("dribbble");
   const [link, setLink] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrlValid, setImageUrlValid] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
@@ -391,14 +394,20 @@ function UploadForm({ mob, onSubmit, onCancel }) {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const canSubmit = mode === "png" ? Boolean(file) : Boolean(link.trim());
+  const canSubmit = mode === "png"
+    ? pngSource === "file" ? Boolean(file) : imageUrlValid
+    : Boolean(link.trim());
 
   async function handleSubmit() {
     if (!canSubmit || submitting) return;
     setError("");
     setSubmitting(true);
     try {
-      await onSubmit(platform, link, mode === "png" ? file : null);
+      if (mode === "png" && pngSource === "url") {
+        await onSubmit("image", imageUrl.trim(), null);
+      } else {
+        await onSubmit(platform, link, mode === "png" ? file : null);
+      }
     } catch (uploadError) {
       setError(uploadError?.message || "업로드에 실패했습니다.");
     } finally {
@@ -426,26 +435,49 @@ function UploadForm({ mob, onSubmit, onCancel }) {
         </>
       ) : (
         <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", border: "1px dashed #A259FF55", borderRadius: "6px", padding: "14px", background: "#FFFFFF", color: "#A259FF", cursor: "pointer", textAlign: "center", fontSize: "11px" }}>
-            {file ? file.name : "PNG 선택"}
-            <input type="file" accept="image/png,.png" onChange={event => {
-              const nextFile = event.target.files?.[0] || null;
-              setError("");
-              if (nextFile && nextFile.type !== "image/png") {
-                setFile(null);
-                setError("PNG 파일만 업로드할 수 있습니다.");
-                return;
-              }
-              if (nextFile && nextFile.size > 10 * 1024 * 1024) {
-                setFile(null);
-                setError("PNG는 10MB 이하만 업로드할 수 있습니다.");
-                return;
-              }
-              setFile(nextFile);
-            }} style={{ display: "none" }} />
-          </label>
-          {preview && <img src={preview} alt="PNG 미리보기" style={{ display: "block", width: "100%", maxHeight: "220px", objectFit: "contain", marginTop: "10px", borderRadius: "6px", background: "#F5F5F5" }} />}
-          <div style={{ fontSize: "9px", color: "#AAAAAA", marginTop: "6px" }}>PNG · 최대 10MB</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "10px" }}>
+            {[["file", "파일 선택"], ["url", "이미지 주소"]].map(([value, label]) => (
+              <button key={value} type="button" onClick={() => { setPngSource(value); setError(""); }} style={{ background: pngSource === value ? "#A259FF0D" : "none", border: `1px solid ${pngSource === value ? "#A259FF44" : "#F0F0F0"}`, borderRadius: "4px", padding: "7px 0", color: pngSource === value ? "#A259FF" : "#999999", cursor: "pointer", fontSize: "10px", fontFamily: "'Inter', sans-serif" }}>{label}</button>
+            ))}
+          </div>
+          {pngSource === "file" ? (
+            <>
+              <label style={{ display: "block", border: "1px dashed #A259FF55", borderRadius: "6px", padding: "14px", background: "#FFFFFF", color: "#A259FF", cursor: "pointer", textAlign: "center", fontSize: "11px" }}>
+                {file ? file.name : "PNG 선택"}
+                <input type="file" accept="image/png,.png" onChange={event => {
+                  const nextFile = event.target.files?.[0] || null;
+                  setError("");
+                  if (nextFile && nextFile.type !== "image/png") {
+                    setFile(null);
+                    setError("PNG 파일만 업로드할 수 있습니다.");
+                    return;
+                  }
+                  if (nextFile && nextFile.size > 10 * 1024 * 1024) {
+                    setFile(null);
+                    setError("PNG는 10MB 이하만 업로드할 수 있습니다.");
+                    return;
+                  }
+                  setFile(nextFile);
+                }} style={{ display: "none" }} />
+              </label>
+              {preview && <img src={preview} alt="PNG 미리보기" style={{ display: "block", width: "100%", maxHeight: "220px", objectFit: "contain", marginTop: "10px", borderRadius: "6px", background: "#F5F5F5" }} />}
+              <div style={{ fontSize: "9px", color: "#AAAAAA", marginTop: "6px" }}>PNG · 최대 10MB</div>
+            </>
+          ) : (
+            <>
+              <input value={imageUrl} onChange={event => {
+                setImageUrl(event.target.value);
+                setImageUrlValid(false);
+                setError("");
+              }} onKeyDown={event => event.key === "Enter" && imageUrlValid && handleSubmit()} placeholder="https://example.com/image.png"
+                style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${imageUrlValid ? "#0ACF8344" : "#A259FF33"}`, borderRadius: "4px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none" }} />
+              {/^https?:\/\//i.test(imageUrl.trim()) && (
+                <img src={imageUrl.trim()} alt="이미지 주소 미리보기" onLoad={() => { setImageUrlValid(true); setError(""); }} onError={() => { setImageUrlValid(false); setError("이미지를 불러올 수 없는 주소입니다."); }}
+                  style={{ display: "block", width: "100%", maxHeight: "220px", objectFit: "contain", marginTop: "10px", borderRadius: "6px", background: "#F5F5F5" }} />
+              )}
+              <div style={{ fontSize: "9px", color: imageUrlValid ? "#0ACF83" : "#AAAAAA", marginTop: "6px" }}>{imageUrlValid ? "이미지 확인 완료" : "공개된 이미지 주소를 입력하세요"}</div>
+            </>
+          )}
         </div>
       )}
       {error && <div style={{ fontSize: "10px", color: "#FF7262", marginBottom: "10px" }}>{error}</div>}
