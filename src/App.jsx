@@ -318,7 +318,12 @@ export default function App() {
         {view === "calendar"
           ? <CalendarPanel mob={mob} records={records} challenges={CHALLENGES}
               today={today} onSubmitToday={(platform, link) => submitUpload(today?.id, platform, link)}
-              onUndoToday={() => undoDone(today?.id)} todayRecord={records[today?.id]} currentDay={currentDay} />
+              onUndoToday={() => undoDone(today?.id)} todayRecord={records[today?.id]} currentDay={currentDay}
+              onSubmitRetro={async (id, platform, link, doneAt) => {
+                const challenge = CHALLENGES[id - 1];
+                setRecords(r => ({ ...r, [id]: { done: true, doneAt, platform, link: link.trim() } }));
+                await supabase.from("tracker").upsert({ id, day: id, title: challenge.title, done: true, platform, link: link.trim(), done_at: doneAt, user_id: user?.id });
+              }} />
           : view === "today"
           ? <TodayPanel mob={mob} challenge={today} record={records[today?.id]}
               onSubmit={(platform, link) => submitUpload(today.id, platform, link)}
@@ -405,10 +410,12 @@ function TodayPanel({ mob, challenge, record, onSubmit, onUndo }) {
 }
 
 // ─── 캘린더 패널 ──────────────────────────────────────────
-function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoToday, todayRecord, currentDay }) {
+function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoToday, todayRecord, currentDay, onSubmitRetro }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [thumbnails, setThumbnails] = useState({});
   const [showToday, setShowToday] = useState(true);
+  const [selectedDay, setSelectedDay] = useState(null); // 클릭한 날짜
+  const [selectedChallengeId, setSelectedChallengeId] = useState(null); // 해당 챌린지 ID
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -510,7 +517,7 @@ function CalendarPanel({ mob, records, challenges, today, onSubmitToday, onUndoT
           const isToday = isCurrentMonth && day === todayDay;
           return (
             <div key={day} onClick={() => entry?.rec?.link && window.open(entry.rec.link, "_blank")}
-              style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday ? "2px" : "1px"} solid ${isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry ? "pointer" : "default", boxShadow: isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
+              style={{ aspectRatio: "1", background: entry ? "#F0FFF8" : isToday ? "#EEF6FF" : "#F8F8F8", border: `${isToday ? "2px" : "1px"} solid ${isToday ? "#1ABCFE" : entry ? "#0ACF8322" : "#F0F0F0"}`, borderRadius: "4px", position: "relative", overflow: "hidden", cursor: entry ? "pointer" : (day ? "pointer" : "default"), boxShadow: isToday ? "0 0 0 3px #1ABCFE22" : "none" }}>
               {thumb && <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />}
               <div style={{ position: "absolute", top: "3px", left: "4px", fontSize: mob ? "9px" : "10px", color: isToday ? "#1ABCFE" : entry ? "#0ACF83" : "#AAAAAA", zIndex: 1, fontWeight: isToday ? "700" : "400", textShadow: thumb ? "0 1px 3px rgba(0,0,0,0.9)" : "none" }}>{day}</div>
               {isToday && !entry && (
@@ -609,6 +616,32 @@ function AllPanel({ mob, challenges, records, onSubmit, onUndo, currentDay }) {
         })}
       </div>
       <div style={{ marginTop: "12px", fontSize: "10px", color: "#CCCCCC" }}>💡 제목 클릭 → 미션 설명 / 업로드 버튼 → 완료 처리</div>
+    </div>
+  );
+}
+
+// ─── 소급 업로드 폼 ──────────────────────────────────────
+function RetroUploadForm({ challenge, onSubmit, onCancel }) {
+  const [platform, setPlatform] = useState("twitter");
+  const [link, setLink] = useState("");
+  const selected = UPLOAD_PLATFORMS.find(p => p.key === platform);
+  return (
+    <div>
+      <div style={{ fontSize: "11px", color: "#777777", marginBottom: "12px", padding: "8px 12px", background: "#F8F8F8", borderRadius: "6px" }}>
+        <strong style={{ color: "#0ACF83" }}>Day {challenge.id}: {challenge.title}</strong>
+        <div style={{ fontSize: "10px", color: "#AAAAAA", marginTop: "4px" }}>{challenge.desc.slice(0, 60)}...</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5px", marginBottom: "10px" }}>
+        {UPLOAD_PLATFORMS.map(p => (
+          <button key={p.key} onClick={() => setPlatform(p.key)} style={{ background: platform === p.key ? `${p.color}14` : "none", border: `1px solid ${platform === p.key ? p.color + "44" : "#F0F0F0"}`, borderRadius: "4px", padding: "7px 0", color: platform === p.key ? p.color : "#888888", cursor: "pointer", fontSize: "11px", fontFamily: "'Inter', sans-serif" }}>{p.label}</button>
+        ))}
+      </div>
+      <input value={link} onChange={e => setLink(e.target.value)} placeholder={selected?.placeholder}
+        style={{ width: "100%", boxSizing: "border-box", background: "#F5F5F5", border: `1px solid ${selected?.color}33`, borderRadius: "4px", padding: "10px 12px", color: "#1A1A1A", fontFamily: "'Inter', sans-serif", fontSize: "12px", outline: "none", marginBottom: "10px" }} />
+      <div style={{ display: "flex", gap: "6px" }}>
+        <button onClick={() => link.trim() && onSubmit(platform, link)} style={{ flex: 1, background: link.trim() ? "#F0FFF8" : "#F5F5F5", border: `1px solid ${link.trim() ? "#0ACF8344" : "#F0F0F0"}`, borderRadius: "4px", color: link.trim() ? "#0ACF83" : "#AAAAAA", cursor: link.trim() ? "pointer" : "default", fontSize: "11px", padding: "10px", fontFamily: "'Inter', sans-serif" }}>✓ 등록하기</button>
+        <button onClick={onCancel} style={{ background: "none", border: "1px solid #F0F0F0", borderRadius: "4px", color: "#999999", cursor: "pointer", fontSize: "11px", padding: "10px 14px", fontFamily: "'Inter', sans-serif" }}>취소</button>
+      </div>
     </div>
   );
 }
